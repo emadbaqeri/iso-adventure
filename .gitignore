@@ -1,0 +1,27 @@
+# Godot 4
+.godot/
+.import/
+*.import
+export.cfg
+export_credentials.cfg
+*.translation
+
+# Build output
+build/
+bin/
+*.pck
+*.zip
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Test reports (gdUnit4)
+reports/
+
+# Logs
+*.log

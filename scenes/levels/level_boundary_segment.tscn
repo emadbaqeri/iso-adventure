@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3 uid="uid://clevel_boundary_segment"]
+
+[ext_resource type="Script" path="res://scripts/levels/level_boundary_segment.gd" id="1_script"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_placeholder"]
+size = Vector3(1, 4, 1)
+
+[node name="LevelBoundarySegment" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+script = ExtResource("1_script")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_placeholder")
+
+[node name="DebugMesh" type="MeshInstance3D" parent="."]
+visible = false
+cast_shadow = 0

@@ -1,4 +1,4 @@
-[gd_scene load_steps=30 format=3 uid="uid://ctest_room_scene"]
+[gd_scene load_steps=28 format=3 uid="uid://ctest_room_scene"]
 
 [ext_resource type="PackedScene" uid="uid://cplayer_scene" path="res://scenes/player/player.tscn" id="1_player"]
 [ext_resource type="PackedScene" uid="uid://cslime_enemy" path="res://scenes/enemies/slime.tscn" id="2_slime"]
@@ -9,6 +9,7 @@
 [ext_resource type="PackedScene" uid="uid://cscene_reset_hud" path="res://scenes/ui/scene_reset_hud.tscn" id="14_reset_hud"]
 [ext_resource type="Script" path="res://scripts/levels/level_spawn_marker.gd" id="15_spawn"]
 [ext_resource type="Script" path="res://scripts/levels/player_fall_safety.gd" id="16_fall"]
+[ext_resource type="Script" path="res://scripts/levels/level_perimeter_bounds.gd" id="17_perimeter"]
 [ext_resource type="Script" path="res://scripts/rendering/iso_camera_rig.gd" id="2_rig"]
 [ext_resource type="Material" path="res://materials/lowpoly_floor.tres" id="3_floor"]
 [ext_resource type="Material" path="res://materials/lowpoly_default.tres" id="4_default"]
@@ -51,12 +52,6 @@ size = Vector3(34, 0.4, 26)
 [sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
 size = Vector3(34, 0.4, 26)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_boundary_ns"]
-size = Vector3(36, 4.0, 1.0)
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_boundary_ew"]
-size = Vector3(1.0, 4.0, 28.0)
-
 [sub_resource type="BoxShape3D" id="BoxShape3D_gate_floor"]
 size = Vector3(8, 0.4, 8)
 
@@ -98,7 +93,7 @@ mood_presets = Array[ExtResource("8_warm")]([ExtResource("8_warm"), ExtResource(
 
 [node name="World" type="Node3D" parent="."]
 
-[node name="Floor" type="StaticBody3D" parent="World"]
+[node name="Floor" type="StaticBody3D" parent="World" groups=["level_floor"]]
 collision_layer = 1
 collision_mask = 0
 
@@ -111,7 +106,7 @@ surface_material_override/0 = ExtResource("3_floor")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, -0.2, 0)
 shape = SubResource("BoxShape3D_floor")
 
-[node name="GateFloor" type="StaticBody3D" parent="World"]
+[node name="GateFloor" type="StaticBody3D" parent="World" groups=["level_floor"]]
 collision_layer = 1
 collision_mask = 0
 
@@ -119,37 +114,8 @@ collision_mask = 0
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.5, -0.2, -1)
 shape = SubResource("BoxShape3D_gate_floor")
 
-[node name="BoundaryNorth" type="StaticBody3D" parent="World"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 2, -13.5)
-collision_layer = 1
-collision_mask = 0
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="World/BoundaryNorth"]
-shape = SubResource("BoxShape3D_boundary_ns")
-
-[node name="BoundarySouth" type="StaticBody3D" parent="World"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 2, 13.5)
-collision_layer = 1
-collision_mask = 0
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="World/BoundarySouth"]
-shape = SubResource("BoxShape3D_boundary_ns")
-
-[node name="BoundaryWest" type="StaticBody3D" parent="World"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13.5, 2, 0)
-collision_layer = 1
-collision_mask = 0
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="World/BoundaryWest"]
-shape = SubResource("BoxShape3D_boundary_ew")
-
-[node name="BoundaryEast" type="StaticBody3D" parent="World"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 21.5, 2, 0)
-collision_layer = 1
-collision_mask = 0
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="World/BoundaryEast"]
-shape = SubResource("BoxShape3D_boundary_ew")
+[node name="LevelPerimeterBounds" type="Node3D" parent="World"]
+script = ExtResource("17_perimeter")
 
 [node name="WallNorth" type="StaticBody3D" parent="World"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, -8)

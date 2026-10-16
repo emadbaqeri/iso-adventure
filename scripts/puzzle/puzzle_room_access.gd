@@ -28,13 +28,28 @@ func _on_room_cleared() -> void:
 	_open_gate()
 
 
-func _open_gate() -> void:
-	if _opened:
+func force_open() -> void:
+	_open_gate(true)
+
+
+func _open_gate(instant: bool = false) -> void:
+	if _opened and not instant:
 		return
 	_opened = true
 	if _tween != null and _tween.is_valid():
 		_tween.kill()
+	var target_x := _closed_x + slide_distance
+	_set_collision_enabled(false)
+	if instant:
+		position.x = target_x
+		return
 	_tween = create_tween()
-	_tween.tween_property(self, "position:x", _closed_x + slide_distance, move_tween_seconds).set_trans(
+	_tween.tween_property(self, "position:x", target_x, move_tween_seconds).set_trans(
 		Tween.TRANS_QUAD
 	).set_ease(Tween.EASE_IN_OUT)
+
+
+func _set_collision_enabled(enabled: bool) -> void:
+	var collision := get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if collision != null:
+		collision.disabled = not enabled

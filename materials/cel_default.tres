@@ -1,0 +1,10 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3]
+
+[ext_resource type="Shader" path="res://shaders/cel_spatial.gdshader" id="1_shader"]
+
+[resource]
+shader = ExtResource("1_shader")
+shader_parameter/albedo_color = Color(0.24, 0.31, 0.44, 1)
+shader_parameter/band_shadow = Color(0.11, 0.14, 0.19, 1)
+shader_parameter/band_mid = Color(0.24, 0.31, 0.44, 1)
+shader_parameter/band_highlight = Color(0.56, 0.64, 0.77, 1)

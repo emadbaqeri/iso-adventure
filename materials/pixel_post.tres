@@ -1,0 +1,10 @@
+[gd_resource type="ShaderMaterial" load_steps=3 format=3]
+
+[ext_resource type="Shader" path="res://shaders/pixel_post.gdshader" id="1_shader"]
+[ext_resource type="Texture2D" path="res://assets/palette/starter_palette.png" id="2_palette"]
+
+[resource]
+shader = ExtResource("1_shader")
+shader_parameter/viewport_size = Vector2(640, 360)
+shader_parameter/use_palette = false
+shader_parameter/palette_tex = ExtResource("2_palette")

@@ -51,4 +51,13 @@ jobs:
           xvfb-run -a ./addons/gdUnit4/runtest.sh --godot_binary .ci/godot/Godot -a res://tests/unit
 
       - name: Run scene smoke test
-        run: .ci/godot/Godot --headless --path . -s res://tests/smoke/scene_smoke_runner.gd
+        run: |
+          set -o pipefail
+          xvfb-run -a .ci/godot/Godot --headless --path . -s res://tests/smoke/scene_smoke_runner.gd 2>&1 | tee /tmp/godot-scene-smoke.log
+          if grep -qE '^(ERROR:|SCRIPT ERROR:|USER ERROR:)' /tmp/godot-scene-smoke.log; then
+            grep -E '^(ERROR:|SCRIPT ERROR:|USER ERROR:)' /tmp/godot-scene-smoke.log
+            exit 1
+          fi
+
+      - name: Forward+ render smoke (zero ERROR lines)
+        run: bash tools/ci/render_forward_smoke.sh /tmp/godot-render-forward-smoke.log

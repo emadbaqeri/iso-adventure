@@ -1,11 +1,13 @@
 extends SceneTree
 
-const WARMUP := 15
+const WARMUP := 45
 const CAPTURES := 10
 const GAP := 4
 
 var _root: Window
+var _scene: Node
 var _mood: RenderMoodController
+var _sub_viewport: SubViewport
 
 
 func _initialize() -> void:
@@ -17,15 +19,12 @@ func _initialize() -> void:
 		push_error("Failed to load render_test")
 		quit(1)
 		return
-	var scene := packed.instantiate()
-	_root.add_child(scene)
-	if scene is Control:
-		var control := scene as Control
-		control.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		control.set_size(Vector2(1280, 720))
-	if _root != null:
-		_root.size = Vector2i(1280, 720)
-	_mood = scene.get_node("SubViewportContainer/SubViewport/MoodController") as RenderMoodController
+	_scene = packed.instantiate()
+	_root.add_child(_scene)
+	if _scene is Control:
+		(_scene as Control).set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_sub_viewport = _scene.get_node("SubViewportContainer/SubViewport") as SubViewport
+	_mood = _scene.get_node("SubViewportContainer/SubViewport/MoodController") as RenderMoodController
 	call_deferred("_capture_sequence")
 
 
@@ -49,14 +48,34 @@ func _capture_sequence() -> void:
 func _save_capture(index: int) -> void:
 	var base := "/workspace/docs/screenshots"
 	DirAccess.make_dir_recursive_absolute(base)
-	var tex := _root.get_texture()
-	if tex == null:
-		push_error("No window texture")
-		return
-	var img := tex.get_image()
+	var img := _grab_image()
 	if img == null:
-		push_error("No image")
+		push_error("No frame image at index %d" % index)
 		return
 	var path := "%s/frame_%02d.png" % [base, index]
-	var err := img.save_png(path)
-	print("capture %s err=%s size=%s" % [path, err, img.get_size()])
+	var save_img := img.duplicate()
+	var target := Vector2i(1280, 720)
+	if save_img.get_width() < target.x:
+		var factor: int = target.x / save_img.get_width()
+		save_img.resize(save_img.get_width() * factor, save_img.get_height() * factor, Image.INTERPOLATE_NEAREST)
+	var err: Error = save_img.save_png(path)
+	print("capture %s err=%s size=%s renderer=%s" % [path, err, save_img.get_size(), _renderer_label()])
+
+
+func _grab_image() -> Image:
+	if _root != null and _root.get_texture() != null:
+		var win_img := _root.get_texture().get_image()
+		if win_img != null and win_img.get_width() >= 640:
+			return win_img
+	if _sub_viewport == null:
+		return null
+	var vp_tex := _sub_viewport.get_texture()
+	if vp_tex == null or vp_tex.get_width() < 16:
+		return null
+	return vp_tex.get_image()
+
+
+func _renderer_label() -> String:
+	if RenderingServer.get_rendering_device() != null:
+		return "Forward+"
+	return "Compatibility"

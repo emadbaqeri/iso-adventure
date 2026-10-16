@@ -1,6 +1,8 @@
 class_name RenderMoodController
 extends Node
 
+const MIN_VIEWPORT_DIM := 16
+
 @export var world_environment_path: NodePath
 @export var key_light_path: NodePath
 @export var rim_light_path: NodePath
@@ -16,6 +18,14 @@ func _ready() -> void:
 	if mood_presets.is_empty():
 		push_warning("RenderMoodController: no mood presets configured")
 		return
+	call_deferred("_apply_initial_mood")
+
+
+func _apply_initial_mood() -> void:
+	for _i: int in range(4):
+		if _viewport_large_enough_for_effects():
+			break
+		await get_tree().process_frame
 	apply_mood(mood_presets[0])
 
 
@@ -39,10 +49,14 @@ func apply_mood(mood: RenderMoodResource) -> void:
 		env.fog_light_color = mood.fog_color
 		env.fog_density = mood.fog_density
 		env.fog_aerial_perspective = mood.fog_aerial_perspective
-		env.ssao_enabled = true
-		env.ssao_intensity = mood.ssao_intensity
-		env.ssao_radius = 0.35
-		env.ssao_power = 1.4
+		var ssao_ok := _viewport_large_enough_for_effects()
+		env.ssao_enabled = ssao_ok and mood.ssao_intensity > 0.01
+		if env.ssao_enabled:
+			env.ssao_intensity = mood.ssao_intensity
+			env.ssao_radius = 0.35
+			env.ssao_power = 1.4
+		env.glow_enabled = false
+		env.ssil_enabled = false
 
 	var key := get_node_or_null(key_light_path) as DirectionalLight3D
 	if key != null:
@@ -71,6 +85,14 @@ func apply_mood(mood: RenderMoodResource) -> void:
 		composite.set_shader_parameter("outline_light", mood.outline_light)
 
 	print("Mood: %s" % mood.mood_name)
+
+
+func _viewport_large_enough_for_effects() -> bool:
+	var vp := get_viewport()
+	if vp == null:
+		return false
+	var size := vp.get_visible_rect().size
+	return int(size.x) >= MIN_VIEWPORT_DIM and int(size.y) >= MIN_VIEWPORT_DIM
 
 
 func _resolve_material(path: NodePath) -> ShaderMaterial:

@@ -74,7 +74,6 @@ func _enable_stretch_layout() -> void:
 
 func _process(_delta: float) -> void:
 	size = get_viewport().get_visible_rect().size
-	_apply_sub_pixel_offset()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -104,21 +103,6 @@ func _apply_composite_uniforms() -> void:
 	if palette_texture != null:
 		mat.set_shader_parameter("palette_tex", palette_texture)
 	mat.set_shader_parameter("viewport_size", Vector2(_sub_viewport.size if _sub_viewport else render_size))
-
-
-func _apply_sub_pixel_offset() -> void:
-	if _container == null or _camera == null:
-		return
-	var rig := get_node_or_null(camera_rig_path) as PixelCameraRig
-	if rig == null:
-		return
-	var scale := integer_scale()
-	var vp_offset := PixelCameraMath.remainder_to_viewport_offset_unproject(
-		_camera,
-		rig.sub_pixel_offset,
-		rig.pixel_world_size,
-	)
-	_container.position = _container_base_position - vp_offset * float(scale)
 
 
 func integer_scale() -> int:
@@ -152,4 +136,3 @@ func _on_resized() -> void:
 	var view_size := Vector2(_window_size_i())
 	_container_base_position = (view_size - display_size) * 0.5
 	_container.position = _container_base_position
-	_apply_sub_pixel_offset()

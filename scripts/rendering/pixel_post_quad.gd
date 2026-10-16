@@ -39,8 +39,7 @@ func _pick_post_shader() -> void:
 		mat.set_shader_parameter("viewport_size", old.get_shader_parameter("viewport_size"))
 		mat.set_shader_parameter("use_palette", old.get_shader_parameter("use_palette"))
 		mat.set_shader_parameter("palette_tex", old.get_shader_parameter("palette_tex"))
-		mat.set_shader_parameter("outline_light", old.get_shader_parameter("outline_light"))
-		mat.set_shader_parameter("outline_darken", old.get_shader_parameter("outline_darken"))
+		mat.set_shader_parameter("outline_color", old.get_shader_parameter("outline_color"))
 	mat.shader = shader
 	material_override = mat
 

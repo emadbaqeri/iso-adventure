@@ -103,12 +103,7 @@ func apply_mood(mood: RenderMoodResource) -> void:
 
 	var outline_mat := _resolve_post_outline_material()
 	if outline_mat != null:
-		outline_mat.set_shader_parameter("key_light_dir", key_dir)
-		outline_mat.set_shader_parameter("outline_light", mood.outline_light)
-		outline_mat.set_shader_parameter("outline_darken", mood.outline_darken)
-		outline_mat.set_shader_parameter("outline_cool_shift", mood.outline_cool_shift)
-		outline_mat.set_shader_parameter("crease_highlight_boost", mood.crease_highlight_boost)
-		outline_mat.set_shader_parameter("crease_shadow_darken", mood.crease_shadow_darken)
+		outline_mat.set_shader_parameter("outline_color", mood.outline_color)
 
 	print("Mood: %s" % mood.mood_name)
 

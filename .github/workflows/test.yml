@@ -61,3 +61,6 @@ jobs:
 
       - name: Forward+ render smoke (zero ERROR lines)
         run: bash tools/ci/render_forward_smoke.sh /tmp/godot-render-forward-smoke.log
+
+      - name: Outline temporal stability smoke
+        run: bash tools/ci/outline_stability_smoke.sh /tmp/godot-outline-stability.log

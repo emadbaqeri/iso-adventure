@@ -52,3 +52,11 @@ func _physics_process(_delta: float) -> void:
 	var snapped_cam_origin: Vector3 = snap["snapped_world"]
 	sub_pixel_offset = snap["sub_pixel"]
 	global_position = snapped_cam_origin - basis * _camera_local.origin
+	_apply_sub_pixel_camera_offset()
+
+
+func _apply_sub_pixel_camera_offset() -> void:
+	if _camera == null:
+		return
+	# Fractional snap remainder in render-viewport pixels (ortho); keeps the world locked to the texel grid.
+	_camera.frustum_offset = Vector2(-sub_pixel_offset.x, -sub_pixel_offset.y)

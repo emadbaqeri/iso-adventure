@@ -8,13 +8,16 @@ uniform vec2 viewport_size = vec2(640.0, 360.0);
 uniform float depth_edge_scale = 2800.0;
 uniform float color_edge_scale = 12.0;
 uniform float depth_threshold = 0.02;
-uniform float depth_curvature_threshold = 0.004;
-uniform float color_threshold = 0.08;
-uniform vec4 outline_dark : source_color = vec4(0.12, 0.06, 0.22, 1.0);
-uniform vec4 outline_light : source_color = vec4(0.78, 0.88, 1.0, 1.0);
+uniform float depth_curvature_threshold = 0.006;
+uniform float color_threshold = 0.09;
+uniform vec4 outline_color : source_color = vec4(0.09, 0.09, 0.14, 1.0);
 
 uniform bool use_palette = false;
 uniform sampler2D palette_tex : filter_nearest, repeat_disable;
+
+vec2 texel_uv(ivec2 coord) {
+	return (vec2(coord) + vec2(0.5)) / viewport_size;
+}
 
 vec3 quantize_to_palette(vec3 color) {
 	int palette_width = textureSize(palette_tex, 0).x;
@@ -33,7 +36,8 @@ vec3 quantize_to_palette(vec3 color) {
 
 void fragment() {
 	vec2 px = 1.0 / viewport_size;
-	vec2 uv = SCREEN_UV;
+	ivec2 ic = ivec2(floor(SCREEN_UV * viewport_size));
+	vec2 uv = texel_uv(ic);
 	vec4 scene = texture(screen_texture, uv);
 	vec3 color = scene.rgb;
 
@@ -62,8 +66,7 @@ void fragment() {
 	) * color_edge_scale;
 
 	if (depth_edge > depth_threshold || color_edge > color_threshold) {
-		float lum = dot(color, vec3(0.299, 0.587, 0.114));
-		color = mix(outline_dark.rgb, outline_light.rgb, smoothstep(0.35, 0.65, lum));
+		color = outline_color.rgb;
 	}
 
 	if (use_palette) {

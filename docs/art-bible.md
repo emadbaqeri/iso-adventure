@@ -1,87 +1,67 @@
-# Art bible — 3D isometric pixel art (t3ssel8r-inspired)
+# Art bible — 3D Pixel Art
+
+## Style name
+
+**3D Pixel Art:** low-poly 3D scenes rendered to a fixed **pixel grid** (640×360 internal resolution), then integer-upscaled with nearest filtering. Not painterly or heavily stylised post — readable light/shadow, hard cast shadows, simple **1px dark outlines**.
 
 ## Look
 
-Low-res 3D rendered into a **SubViewport** at **640×360**, displayed through `PixelRenderRoot` with **nearest-neighbor** filtering and **integer** upscale (floor of window size ÷ render size). Orthographic camera at **~35°** isometric (`PixelCameraRig`).
+Orthographic isometric camera (`PixelCameraRig`, ~35°). **Pixel stability** is required:
 
-**Pixel stability:** each physics frame the camera origin is projected onto the camera **right/up** axes and snapped in steps of `units_per_pixel` (world units per texel). The fractional remainder drives a **sub-pixel offset** on the upscaled `SubViewportContainer`, computed via `Camera3D.unproject_position` so iso views compensate in real screen space.
+- Camera origin snapped to the render texel grid each physics frame.
+- Sub-texel remainder applied via **`Camera3D.frustum_offset`** (not fractional UI container shifts).
+- Dynamic props snap to the same grid in camera space (`render_test_mover.gd` pattern).
+- Outlines are detected on **texel centers** with neighbor support to avoid单-pixel sparkle.
+
+CI checks: `tools/ci/outline_stability_smoke.sh` reports `static_hold_changed_pixels` and `pan_aligned_changed_pixels` (expect **0**).
 
 ## Render pipeline
 
 | Stage | Resource |
 |-------|----------|
-| Cel surface | `shaders/cel_spatial.gdshader` — **top / lit side / shadow** bands, cast shadows snap to shadow band |
-| Mood | `RenderMoodResource` + `RenderMoodController` (`resources/moods/`) |
-| Low-res 3D | `SubViewport` 640×360 inside `scenes/render_test.tscn` |
-| Outlines | `PixelPostQuad` on **Camera3D** + `shaders/pixel_post.gdshader` (Forward+) |
-| Palette | Optional quantize on `SubViewportContainer` (`pixel_viewport_composite.gdshader`) |
+| Surfaces | `shaders/cel_spatial.gdshader` — 3 bands (top / side / shadow) + hard sun shadow band |
+| Mood | `RenderMoodResource` + `RenderMoodController` — **subtle** warm/cool presets |
+| Low-res 3D | `SubViewport` 640×360 in `scenes/render_test.tscn` |
+| Outlines | `PixelPostQuad` on `Camera3D`, `shaders/pixel_post.gdshader` (Forward+) |
+| Palette | Optional on `SubViewportContainer` (`pixel_viewport_composite.gdshader`) |
 
-### Cel shading (3 tones + cast shadows)
+### Lighting
 
-- **Top faces** (`normal.y > 0.55`): `band_top` — warmest read.
-- **Lit sides**: `band_mid` → `band_highlight` by `ndotl` vs `band_thresholds` (hard steps).
-- **Shadow sides**: `band_shadow` — hue-shifted **cool** (blue/purple).
-- **Sun shadows**: when `ATTENUATION < 0.5`, force **shadow band** (crisp, pixel-aligned; not a smooth gradient).
-- **Rim/back** light: separate directional pass; only rim term when light direction ≠ key sun (`key_light_dir` alignment).
-- **Band dither** (optional): light-direction hash on band thresholds — toggle **`B`** or `band_dither` on `PixelRenderRoot`.
+- Directional **sun** with hard shadow maps (`shadow_filter = none`).
+- Cast shadows select the **shadow cel band** (not a smooth gradient).
+- Light **ambient** + mild **rim** (low `rim_strength`); moods tweak colors gently.
+- **Fog** and **SSAO** for depth and floor contact — kept subtle in presets.
 
-### Outlines (t3ssel8r-style)
+### Outlines
 
-| Edge type | Treatment |
-|-----------|-----------|
-| **Silhouette / depth** | 1px **hue-darkened** line from local surface color (cool-shifted), not a global outline color |
-| **Convex crease (lit)** | 1px **warm highlight** along normal discontinuity facing the sun |
-| **Concave / occluded crease** | Darkened, hue-shifted crease |
+- Single **`outline_color`** (near-black), 1px depth silhouettes and interior creases.
+- Depth edges use **Laplacian gating** so flat floors stay clean.
+- Weak / isolated edge pixels suppressed (neighbor support + thresholds).
 
-Depth edges use **Laplacian gating** so flat floors stay clean. Mood drives `outline_darken`, `outline_cool_shift`, `crease_*`, and `outline_light`.
+### Controls (test scene)
 
-### Lighting & depth
+- **M** — cycle moods (`warm_day`, `cool_dungeon`)
+- **B** — toggle optional band dither (`band_dither` on `PixelRenderRoot`)
 
-- **Key** sun + stronger **rim** fill; lower ambient so bands read clearly.
-- **Fog**: height/distance tint per mood (`fog_density`, `fog_aerial_perspective`).
-- **SSAO**: contact darkening at object bases (enabled when viewport ≥ 16px).
-- **Hard** shadow maps (`shadow_filter = none`); bias tuned for ortho scene scale.
+Default window **1280×720** → 2× integer upscale.
 
-**Viewport upscale:** `SubViewportContainer.stretch = true` with `stretch_shrink = integer_scale`. Default window **1280×720** → 2× upscale.
-
-**Test scene:** `scenes/render_test.tscn` (main). **M** = cycle moods. Reference captures:
-
-| | Before style push | After |
-|--|-------------------|--------|
-| Warm | `docs/screenshots/before_style_warm_day.png` | `docs/screenshots/after_style_warm_day.png` |
-| Cool | `docs/screenshots/before_style_cool_dungeon.png` | `docs/screenshots/after_style_cool_dungeon.png` |
-
-Also: `warm_day.png`, `cool_dungeon.png`, `motion_00–03.png`.
-
-**Renderer:** Forward+ (`rendering/renderer/rendering_method=forward_plus`). CI: `tools/ci/render_forward_smoke.sh` (zero `ERROR:` lines).
+**Renderer:** Forward+ (`rendering/renderer/rendering_method=forward_plus`). Smoke: `tools/ci/render_forward_smoke.sh`.
 
 ## Mood resource (`RenderMoodResource`)
 
 | Field | Role |
 |-------|------|
-| `key_light_color`, `key_light_energy` | Sun warmth / strength |
-| `ambient_color`, `ambient_energy` | Fill (kept moderate for band contrast) |
-| `shadow_tint`, `mid_tint`, `highlight_tint`, `top_tint` | Cel bands (cool shadow, warm light/top) |
-| `rim_tint`, `rim_strength` | Back/rim separation |
-| `fog_*`, `ssao_intensity` | Depth and contact |
-| `band_count`, `band_dither_strength` | Cel steps + optional dither |
-| `outline_light`, `outline_darken`, `outline_cool_shift`, `crease_*` | Post edge stylization |
+| `key_light_*`, `ambient_*` | Sun and fill |
+| `shadow_tint`, `mid_tint`, `highlight_tint`, `top_tint` | Cel bands |
+| `rim_tint`, `rim_strength` | Subtle edge separation |
+| `fog_*`, `ssao_intensity` | Depth (subtle) |
+| `outline_color` | Post outline |
+| `band_dither_strength` | Optional dither when enabled on root |
 
-Presets: `resources/moods/warm_day.tres`, `resources/moods/cool_dungeon.tres`.
+Presets: `resources/moods/warm_day.tres`, `cool_dungeon.tres`.
 
 ## Assets
 
-- **Blender** → glTF (.glb), low poly, shared scale
-- **Palette** `assets/palette/starter_palette.png` (6×1, nearest)
-- Textures: low resolution, nearest filtering only
-
-## Starter palette (sRGB hex)
-
-| Role | Hex |
-|------|-----|
-| Shadow | `#1c2330` |
-| Mid | `#3d4f6f` |
-| Highlight | `#8fa4c4` |
-| Accent | `#5b8cff` |
-| Warm | `#e8a838` |
-| Danger | `#d94f4f` |
+- Blender → glTF, low poly, shared scale
+- Palette: `assets/palette/starter_palette.png` (nearest)
+- Textures: low resolution, point filtering only

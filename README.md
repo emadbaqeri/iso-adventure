@@ -1,6 +1,6 @@
 # Iso Adventure
 
-Zelda-like 3D isometric pixel-art action-adventure (prototype). Godot 4 + typed GDScript.
+Zelda-like 3D isometric low-poly action-adventure (prototype). Godot 4 + typed GDScript.
 
 ## Godot version
 
@@ -36,7 +36,7 @@ On pushes and PRs, GitHub Actions runs tests and desktop exports (Linux, Windows
 | `scenes/` | Game scenes |
 | `scripts/` | Typed GDScript (`components/`, `state_machine/`) |
 | `assets/` | Models, textures, palette, audio |
-| `shaders/` | Pixel / cel shaders |
+| `materials/` | Low-poly StandardMaterial3D presets |
 | `tests/` | gdUnit4 unit + scene smoke tests |
 | `addons/gdUnit4/` | Vendored test framework (MIT) |
 | `tools/blender/` | Blender export notes / scripts |
@@ -45,7 +45,7 @@ On pushes and PRs, GitHub Actions runs tests and desktop exports (Linux, Windows
 ## Docs
 
 - [GDD](docs/GDD.md) — vision and V1 scope  
-- [Art bible](docs/art-bible.md) — pixel-3D recipe  
+- [Art bible](docs/art-bible.md) — 3D isometric low-poly look  
 - [Audio](docs/audio.md) — sourcing plan  
 - [Asset licenses](docs/assets-licenses.md)  
 - [ADR 0001](docs/decisions/0001-engine-and-art-style.md)

@@ -42,7 +42,7 @@ func _run_smoke() -> PackedStringArray:
 			continue
 		if scene_path.ends_with("render_test.tscn"):
 			get_root().add_child(instance)
-			for _i: int in range(5):
+			for _i: int in range(8):
 				await process_frame
 			instance.queue_free()
 			await process_frame

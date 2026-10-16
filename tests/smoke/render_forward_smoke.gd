@@ -20,8 +20,6 @@ func _boot() -> void:
 		quit(1)
 		return
 	var scene := packed.instantiate()
-	if scene is Control:
-		(scene as Control).set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	get_root().add_child(scene)
 	for _i: int in range(WARMUP_FRAMES + RUN_FRAMES):
 		await process_frame

@@ -2,12 +2,14 @@
 
 ## Pitch
 
-3D isometric **3D Pixel Art** action-adventure: low-res 3D on a fixed pixel grid, dungeons, light combat, puzzles, class-based roles. **V1 prototype** (target scope):
+3D **isometric low-poly** action-adventure: dungeons, light combat, puzzles, class-based roles. **V1 prototype** (target scope):
 
 - Isometric movement and camera
 - Light melee vs. one enemy type
 - One puzzle room (switches, blocks, door)
 - One placeholder player class
+
+Visual target: flat-colored low-poly models on a fixed scale, readable sun shadows, subtle mood lighting (warm/cool).
 
 ## World & story
 

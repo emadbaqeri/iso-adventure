@@ -1,33 +1,41 @@
-[gd_scene load_steps=18 format=3 uid="uid://crender_test_scene"]
+[gd_scene load_steps=14 format=3 uid="uid://crender_test_scene"]
 
-[ext_resource type="Script" path="res://scripts/rendering/pixel_render_root.gd" id="1_root"]
-[ext_resource type="Script" path="res://scripts/rendering/pixel_camera_rig.gd" id="2_rig"]
+[ext_resource type="Script" path="res://scripts/rendering/render_test_root.gd" id="1_root"]
+[ext_resource type="Script" path="res://scripts/rendering/iso_camera_rig.gd" id="2_rig"]
 [ext_resource type="Script" path="res://scripts/rendering/render_test_mover.gd" id="3_mover"]
-[ext_resource type="Material" path="res://materials/cel_default.tres" id="4_cel"]
-[ext_resource type="Material" path="res://materials/cel_accent.tres" id="5_accent"]
-[ext_resource type="Material" path="res://materials/cel_warm.tres" id="6_warm"]
-[ext_resource type="Texture2D" path="res://assets/palette/starter_palette.png" id="8_palette"]
+[ext_resource type="Material" path="res://materials/lowpoly_floor.tres" id="4_floor"]
+[ext_resource type="Material" path="res://materials/lowpoly_default.tres" id="5_default"]
+[ext_resource type="Material" path="res://materials/lowpoly_accent.tres" id="6_accent"]
+[ext_resource type="Material" path="res://materials/lowpoly_warm.tres" id="7_warm"]
 [ext_resource type="Script" path="res://scripts/rendering/render_mood_controller.gd" id="10_mood"]
 [ext_resource type="Resource" path="res://resources/moods/warm_day.tres" id="11_warm"]
 [ext_resource type="Resource" path="res://resources/moods/cool_dungeon.tres" id="12_dungeon"]
-[ext_resource type="Material" path="res://materials/pixel_viewport_composite.tres" id="13_composite"]
-[ext_resource type="Script" path="res://scripts/rendering/pixel_post_quad.gd" id="14_post_quad"]
-[ext_resource type="Material" path="res://materials/pixel_post.tres" id="15_post"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
+sky_top_color = Color(0.42, 0.52, 0.72, 1)
+sky_horizon_color = Color(0.68, 0.76, 0.88, 1)
+ground_bottom_color = Color(0.22, 0.26, 0.34, 1)
+ground_horizon_color = Color(0.38, 0.44, 0.54, 1)
+
+[sub_resource type="Sky" id="Sky_main"]
+sky_material = SubResource("ProceduralSkyMaterial_sky")
 
 [sub_resource type="Environment" id="Environment_render"]
-background_mode = 1
-background_color = Color(0.11, 0.13, 0.17, 1)
+background_mode = 2
+sky = SubResource("Sky_main")
 ambient_light_source = 2
-ambient_light_color = Color(0.48, 0.58, 0.78, 1)
-ambient_light_energy = 0.42
-fog_enabled = true
-fog_light_color = Color(0.62, 0.74, 0.92, 1)
-fog_density = 0.008
-fog_aerial_perspective = 0.28
-ssao_enabled = false
-ssao_intensity = 0.35
-ssao_radius = 0.35
+ambient_light_color = Color(0.48, 0.56, 0.7, 1)
+ambient_light_energy = 0.38
+tonemap_mode = 3
+tonemap_exposure = 1.0
+ssao_enabled = true
+ssao_radius = 0.45
+ssao_intensity = 0.42
 ssao_power = 1.4
+fog_enabled = true
+fog_light_color = Color(0.58, 0.68, 0.82, 1)
+fog_density = 0.008
+fog_aerial_perspective = 0.32
 
 [sub_resource type="BoxMesh" id="BoxMesh_floor"]
 size = Vector3(16, 0.4, 16)
@@ -38,107 +46,69 @@ size = Vector3(1.6, 1.6, 1.6)
 [sub_resource type="BoxMesh" id="BoxMesh_pillar"]
 size = Vector3(1.2, 4, 1.2)
 
-[node name="RenderTest" type="Control"]
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="RenderTest" type="Node3D"]
 script = ExtResource("1_root")
-render_size = Vector2i(640, 360)
-quantize_palette = false
-palette_texture = ExtResource("8_palette")
-composite_material = ExtResource("13_composite")
-mood_controller_path = NodePath("SubViewportContainer/SubViewport/MoodController")
 
-[node name="SubViewportContainer" type="SubViewportContainer" parent="."]
-layout_mode = 0
-texture_filter = 0
-material = ExtResource("13_composite")
-
-[node name="SubViewport" type="SubViewport" parent="SubViewportContainer"]
-handle_input_locally = false
-size = Vector2i(640, 360)
-render_target_update_mode = 4
-
-[node name="WorldEnvironment" type="WorldEnvironment" parent="SubViewportContainer/SubViewport"]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_render")
 
-[node name="Sun" type="DirectionalLight3D" parent="SubViewportContainer/SubViewport"]
-transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 0, 8, 0)
-light_color = Color(1, 0.9, 0.72, 1)
-light_energy = 1.45
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 0, 12, 0)
+light_color = Color(1, 0.94, 0.82, 1)
+light_energy = 1.25
 shadow_enabled = true
 directional_shadow_mode = 1
-directional_shadow_max_distance = 40.0
-shadow_bias = 0.34
-shadow_normal_bias = 3.8
-directional_shadow_pancake_size = 28.0
-shadow_filter = 0
-shadow_blur = 0.0
+directional_shadow_max_distance = 48.0
+shadow_bias = 0.15
+shadow_normal_bias = 1.8
+directional_shadow_pancake_size = 20.0
+shadow_filter = 3
+shadow_blur = 1.2
 
-[node name="RimLight" type="DirectionalLight3D" parent="SubViewportContainer/SubViewport"]
-transform = Transform3D(-0.866025, 0.353553, -0.353553, 0, 0.707107, 0.707107, 0.5, 0.612372, 0.612372, 0, 6, 0)
-light_color = Color(0.62, 0.82, 1, 1)
-light_energy = 0.55
-shadow_enabled = false
-
-[node name="MoodController" type="Node" parent="SubViewportContainer/SubViewport"]
+[node name="MoodController" type="Node" parent="."]
 script = ExtResource("10_mood")
 world_environment_path = NodePath("../WorldEnvironment")
 key_light_path = NodePath("../Sun")
-rim_light_path = NodePath("../RimLight")
-cel_material_paths = Array[NodePath]([NodePath("../World/Floor"), NodePath("../World/CubeA"), NodePath("../World/CubeB"), NodePath("../World/PillarA"), NodePath("../World/PillarB"), NodePath("../World/MovingCube")])
-composite_material_path = NodePath("../../SubViewportContainer")
-post_outline_quad_path = NodePath("../PixelCameraRig/Camera3D/PixelPostQuad")
-render_root_path = NodePath("../..")
 mood_presets = Array[ExtResource("11_warm")]([ExtResource("11_warm"), ExtResource("12_dungeon")])
 
-[node name="World" type="Node3D" parent="SubViewportContainer/SubViewport"]
+[node name="World" type="Node3D" parent="."]
 
-[node name="Floor" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/World"]
+[node name="Floor" type="MeshInstance3D" parent="World"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, 0)
 mesh = SubResource("BoxMesh_floor")
-surface_material_override/0 = ExtResource("4_cel")
+surface_material_override/0 = ExtResource("4_floor")
 
-[node name="CubeA" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/World"]
+[node name="CubeA" type="MeshInstance3D" parent="World"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 0.8, 2)
 mesh = SubResource("BoxMesh_cube")
-surface_material_override/0 = ExtResource("4_cel")
+surface_material_override/0 = ExtResource("5_default")
 
-[node name="CubeB" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/World"]
+[node name="CubeB" type="MeshInstance3D" parent="World"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0.8, -2)
 mesh = SubResource("BoxMesh_cube")
-surface_material_override/0 = ExtResource("5_accent")
+surface_material_override/0 = ExtResource("6_accent")
 
-[node name="PillarA" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/World"]
+[node name="PillarA" type="MeshInstance3D" parent="World"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 2, -3)
 mesh = SubResource("BoxMesh_pillar")
-surface_material_override/0 = ExtResource("6_warm")
+surface_material_override/0 = ExtResource("7_warm")
 
-[node name="PillarB" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/World"]
+[node name="PillarB" type="MeshInstance3D" parent="World"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 2, 3)
 mesh = SubResource("BoxMesh_pillar")
-surface_material_override/0 = ExtResource("4_cel")
+surface_material_override/0 = ExtResource("5_default")
 
-[node name="MovingCube" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/World"]
+[node name="MovingCube" type="MeshInstance3D" parent="World"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
 mesh = SubResource("BoxMesh_cube")
-surface_material_override/0 = ExtResource("5_accent")
+surface_material_override/0 = ExtResource("6_accent")
 script = ExtResource("3_mover")
 
-[node name="PixelCameraRig" type="Node3D" parent="SubViewportContainer/SubViewport"]
-transform = Transform3D(0.707107, -0.408248, 0.57735, 0, 0.816497, 0.57735, -0.707107, -0.408248, 0.57735, 0, 0, 0)
+[node name="IsoCameraRig" type="Node3D" parent="."]
 script = ExtResource("2_rig")
 follow_target_path = NodePath("../World/MovingCube")
-follow_offset = Vector3(0, 4, 2)
+follow_offset = Vector3(7, 9, 7)
+ortho_size = 14.0
 
-[node name="Camera3D" type="Camera3D" parent="SubViewportContainer/SubViewport/PixelCameraRig"]
-projection = 1
-size = 11.0
+[node name="Camera3D" type="Camera3D" parent="IsoCameraRig"]
 current = true
-
-[node name="PixelPostQuad" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/PixelCameraRig/Camera3D"]
-material_override = ExtResource("15_post")
-script = ExtResource("14_post_quad")

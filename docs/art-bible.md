@@ -1,67 +1,47 @@
-# Art bible — 3D Pixel Art
+# Art bible — 3D isometric low-poly
 
-## Style name
+## Style
 
-**3D Pixel Art:** low-poly 3D scenes rendered to a fixed **pixel grid** (640×360 internal resolution), then integer-upscaled with nearest filtering. Not painterly or heavily stylised post — readable light/shadow, hard cast shadows, simple **1px dark outlines**.
+**3D isometric low-poly:** simple meshes (Blender → glTF) with **flat** `StandardMaterial3D` colors from a small palette. Native **1280×720** render with **MSAA** (Forward+). No low-res SubViewport, pixel snapping, or screen-space outline passes.
 
-## Look
+## Camera
 
-Orthographic isometric camera (`PixelCameraRig`, ~35°). **Pixel stability** is required:
+- `IsoCameraRig`: orthographic, **~35° pitch** and **45° yaw**, smooth follow of a target with `follow_offset` and `follow_smooth`.
+- Test scene: follows `MovingCube` with `ortho_size` ~14.
 
-- Camera origin snapped to the render texel grid each physics frame.
-- Sub-texel remainder applied via **`Camera3D.frustum_offset`** (not fractional UI container shifts).
-- Dynamic props snap to the same grid in camera space (`render_test_mover.gd` pattern).
-- Outlines are detected on **texel centers** with neighbor support to avoid单-pixel sparkle.
+## Lighting & environment
 
-CI checks: `tools/ci/outline_stability_smoke.sh` reports `static_hold_changed_pixels` and `pan_aligned_changed_pixels` (expect **0**).
+| Element | Notes |
+|---------|--------|
+| Sun | `DirectionalLight3D`, **soft PCF shadows** (bias tuned to avoid acne) |
+| Sky | `ProceduralSkyMaterial` + ambient |
+| SSAO | Contact shading at object bases |
+| Fog | Light density for depth |
+| Tonemap | **ACES** (`Environment.tonemap_mode`) |
 
-## Render pipeline
+## Moods
 
-| Stage | Resource |
-|-------|----------|
-| Surfaces | `shaders/cel_spatial.gdshader` — 3 bands (top / side / shadow) + hard sun shadow band |
-| Mood | `RenderMoodResource` + `RenderMoodController` — **subtle** warm/cool presets |
-| Low-res 3D | `SubViewport` 640×360 in `scenes/render_test.tscn` |
-| Outlines | `PixelPostQuad` on `Camera3D`, `shaders/pixel_post.gdshader` (Forward+) |
-| Palette | Optional on `SubViewportContainer` (`pixel_viewport_composite.gdshader`) |
+`RenderMoodResource` presets (`warm_day`, `cool_dungeon`) adjust sun, ambient, sky, fog, and SSAO only. **M** toggles moods in `render_test`.
 
-### Lighting
+## Palette (starter)
 
-- Directional **sun** with hard shadow maps (`shadow_filter = none`).
-- Cast shadows select the **shadow cel band** (not a smooth gradient).
-- Light **ambient** + mild **rim** (low `rim_strength`); moods tweak colors gently.
-- **Fog** and **SSAO** for depth and floor contact — kept subtle in presets.
+| Role | Use |
+|------|-----|
+| Floor gray-blue | `materials/lowpoly_floor.tres` |
+| Default gray | `lowpoly_default.tres` |
+| Accent blue | `lowpoly_accent.tres` |
+| Warm gold | `lowpoly_warm.tres` |
 
-### Outlines
+Texture reference: `assets/palette/starter_palette.png` (authoring guide; materials use flat colors).
 
-- Single **`outline_color`** (near-black), 1px depth silhouettes and interior creases.
-- Depth edges use **Laplacian gating** so flat floors stay clean.
-- Weak / isolated edge pixels suppressed (neighbor support + thresholds).
+## Pipeline
 
-### Controls (test scene)
+1. Model in Blender at **fixed world scale**, export **glTF**.
+2. Assign `StandardMaterial3D` (roughness 1, no specular) per mesh or surface.
+3. Place in scenes; use `IsoCameraRig` + `WorldEnvironment` as in `scenes/render_test.tscn`.
 
-- **M** — cycle moods (`warm_day`, `cool_dungeon`)
-- **B** — toggle optional band dither (`band_dither` on `PixelRenderRoot`)
+## Test scene
 
-Default window **1280×720** → 2× integer upscale.
+`scenes/render_test.tscn` — floor, cubes, pillars, sliding cube. Screenshots: `docs/screenshots/warm_day.png`, `cool_dungeon.png`.
 
-**Renderer:** Forward+ (`rendering/renderer/rendering_method=forward_plus`). Smoke: `tools/ci/render_forward_smoke.sh`.
-
-## Mood resource (`RenderMoodResource`)
-
-| Field | Role |
-|-------|------|
-| `key_light_*`, `ambient_*` | Sun and fill |
-| `shadow_tint`, `mid_tint`, `highlight_tint`, `top_tint` | Cel bands |
-| `rim_tint`, `rim_strength` | Subtle edge separation |
-| `fog_*`, `ssao_intensity` | Depth (subtle) |
-| `outline_color` | Post outline |
-| `band_dither_strength` | Optional dither when enabled on root |
-
-Presets: `resources/moods/warm_day.tres`, `cool_dungeon.tres`.
-
-## Assets
-
-- Blender → glTF, low poly, shared scale
-- Palette: `assets/palette/starter_palette.png` (nearest)
-- Textures: low resolution, point filtering only
+**CI:** `tools/ci/render_forward_smoke.sh` (Forward+, zero `ERROR:` lines).

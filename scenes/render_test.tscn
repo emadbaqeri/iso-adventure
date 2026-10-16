@@ -72,8 +72,8 @@ light_energy = 1.45
 shadow_enabled = true
 directional_shadow_mode = 1
 directional_shadow_max_distance = 40.0
-shadow_bias = 0.42
-shadow_normal_bias = 4.8
+shadow_bias = 0.34
+shadow_normal_bias = 3.8
 directional_shadow_pancake_size = 28.0
 shadow_filter = 0
 shadow_blur = 0.0
@@ -81,7 +81,7 @@ shadow_blur = 0.0
 [node name="RimLight" type="DirectionalLight3D" parent="SubViewportContainer/SubViewport"]
 transform = Transform3D(-0.866025, 0.353553, -0.353553, 0, 0.707107, 0.707107, 0.5, 0.612372, 0.612372, 0, 6, 0)
 light_color = Color(0.62, 0.82, 1, 1)
-light_energy = 0.65
+light_energy = 0.95
 shadow_enabled = false
 
 [node name="MoodController" type="Node" parent="SubViewportContainer/SubViewport"]
@@ -92,6 +92,7 @@ rim_light_path = NodePath("../RimLight")
 cel_material_paths = Array[NodePath]([NodePath("../World/Floor"), NodePath("../World/CubeA"), NodePath("../World/CubeB"), NodePath("../World/PillarA"), NodePath("../World/PillarB"), NodePath("../World/MovingCube")])
 composite_material_path = NodePath("../../SubViewportContainer")
 post_outline_quad_path = NodePath("../PixelCameraRig/Camera3D/PixelPostQuad")
+render_root_path = NodePath("../..")
 mood_presets = Array[ExtResource("11_warm")]([ExtResource("11_warm"), ExtResource("12_dungeon")])
 
 [node name="World" type="Node3D" parent="SubViewportContainer/SubViewport"]

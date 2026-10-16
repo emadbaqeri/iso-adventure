@@ -24,6 +24,7 @@ const MIN_SUBVIEWPORT_SIZE := Vector2i(64, 64)
 var _quantize_palette: bool = false
 
 @export var palette_texture: Texture2D
+@export var band_dither: bool = false
 @export var mood_controller_path: NodePath
 
 var _container: SubViewportContainer
@@ -77,11 +78,16 @@ func _process(_delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not event.is_action_pressed(&"cycle_mood"):
+	if event.is_action_pressed(&"cycle_mood"):
+		var mood := get_node_or_null(mood_controller_path) as RenderMoodController
+		if mood != null:
+			mood.cycle_mood()
 		return
-	var mood := get_node_or_null(mood_controller_path) as RenderMoodController
-	if mood != null:
-		mood.cycle_mood()
+	if event.is_action_pressed(&"toggle_band_dither"):
+		band_dither = not band_dither
+		var mood_ctrl := get_node_or_null(mood_controller_path) as RenderMoodController
+		if mood_ctrl != null:
+			mood_ctrl.reapply_current_mood()
 
 
 func _composite_material() -> ShaderMaterial:

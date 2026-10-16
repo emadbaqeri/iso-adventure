@@ -1,54 +1,78 @@
-# Art bible — 3D isometric pixel art
+# Art bible — 3D isometric pixel art (t3ssel8r-inspired)
 
 ## Look
 
 Low-res 3D rendered into a **SubViewport** at **640×360**, displayed through `PixelRenderRoot` with **nearest-neighbor** filtering and **integer** upscale (floor of window size ÷ render size). Orthographic camera at **~35°** isometric (`PixelCameraRig`).
 
-**Pixel stability:** each physics frame the camera origin is projected onto the camera **right/up** axes and snapped in steps of `units_per_pixel` (world units per texel). The fractional remainder drives a **sub-pixel offset** on the upscaled `SubViewportContainer`, computed via `Camera3D.unproject_position` so iso views compensate in real screen space. Follow targets move on the camera **right** axis in world space for even screen motion during tests.
+**Pixel stability:** each physics frame the camera origin is projected onto the camera **right/up** axes and snapped in steps of `units_per_pixel` (world units per texel). The fractional remainder drives a **sub-pixel offset** on the upscaled `SubViewportContainer`, computed via `Camera3D.unproject_position` so iso views compensate in real screen space.
 
 ## Render pipeline
 
 | Stage | Resource |
 |-------|----------|
-| Cel surface | `shaders/cel_spatial.gdshader` — hue-shifted hard bands, optional rim |
+| Cel surface | `shaders/cel_spatial.gdshader` — **top / lit side / shadow** bands, cast shadows snap to shadow band |
 | Mood | `RenderMoodResource` + `RenderMoodController` (`resources/moods/`) |
 | Low-res 3D | `SubViewport` 640×360 inside `scenes/render_test.tscn` |
-| Outline + palette | `shaders/pixel_viewport_composite.gdshader` on `SubViewportContainer` (1-texel color edges, dual-tone outline). `shaders/pixel_post.gdshader` kept for Forward+ experiments. |
-| Palette quantize | Optional; `quantize_palette` on `PixelRenderRoot` |
+| Outlines | `PixelPostQuad` on **Camera3D** + `shaders/pixel_post.gdshader` (Forward+) |
+| Palette | Optional quantize on `SubViewportContainer` (`pixel_viewport_composite.gdshader`) |
 
-**Lighting & depth:** warm **key** (`DirectionalLight3D` sun) + cool **ambient**, cool **rim** fill, **SSAO** for contact read, **distance fog** tinted per mood, **hard** sun shadows (`shadow_filter = none`). Cel bands use separate shadow/mid/highlight tints (not only darker albedo).
+### Cel shading (3 tones + cast shadows)
 
-**Viewport upscale:** `SubViewportContainer.stretch = true` with `stretch_shrink = integer_scale` (nearest filter). Default window **1280×720** → 2× upscale fills the window.
+- **Top faces** (`normal.y > 0.55`): `band_top` — warmest read.
+- **Lit sides**: `band_mid` → `band_highlight` by `ndotl` vs `band_thresholds` (hard steps).
+- **Shadow sides**: `band_shadow` — hue-shifted **cool** (blue/purple).
+- **Sun shadows**: when `ATTENUATION < 0.5`, force **shadow band** (crisp, pixel-aligned; not a smooth gradient).
+- **Rim/back** light: separate directional pass; only rim term when light direction ≠ key sun (`key_light_dir` alignment).
+- **Band dither** (optional): light-direction hash on band thresholds — toggle **`B`** or `band_dither` on `PixelRenderRoot`.
 
-**Test scene:** `scenes/render_test.tscn` (main scene). Press **M** to cycle moods (`warm_day` → `cool_dungeon`). Reference captures: `docs/screenshots/warm_day.png`, `cool_dungeon.png`, `motion_*.png`.
+### Outlines (t3ssel8r-style)
 
-**Renderer:** Project pins **Forward+** (`rendering/renderer/rendering_method=forward_plus`) for macOS Metal. Composite post runs on the container material (works on Compatibility/OpenGL too).
+| Edge type | Treatment |
+|-----------|-----------|
+| **Silhouette / depth** | 1px **hue-darkened** line from local surface color (cool-shifted), not a global outline color |
+| **Convex crease (lit)** | 1px **warm highlight** along normal discontinuity facing the sun |
+| **Concave / occluded crease** | Darkened, hue-shifted crease |
 
-## Shaders
+Depth edges use **Laplacian gating** so flat floors stay clean. Mood drives `outline_darken`, `outline_cool_shift`, `crease_*`, and `outline_light`.
 
-- Toon/cel: `band_count` (2–4), hue-shifted `band_shadow` / `band_mid` / `band_highlight`, `rim_tint` + `rim_strength`
-- Outline: 1-texel depth + normal neighbors; boosted on upward-facing normals; `outline_dark` / `outline_light` chosen per face luminance
-- Palette: nearest-color match across palette texels (toggle on root)
+### Lighting & depth
+
+- **Key** sun + stronger **rim** fill; lower ambient so bands read clearly.
+- **Fog**: height/distance tint per mood (`fog_density`, `fog_aerial_perspective`).
+- **SSAO**: contact darkening at object bases (enabled when viewport ≥ 16px).
+- **Hard** shadow maps (`shadow_filter = none`); bias tuned for ortho scene scale.
+
+**Viewport upscale:** `SubViewportContainer.stretch = true` with `stretch_shrink = integer_scale`. Default window **1280×720** → 2× upscale.
+
+**Test scene:** `scenes/render_test.tscn` (main). **M** = cycle moods. Reference captures:
+
+| | Before style push | After |
+|--|-------------------|--------|
+| Warm | `docs/screenshots/before_style_warm_day.png` | `docs/screenshots/after_style_warm_day.png` |
+| Cool | `docs/screenshots/before_style_cool_dungeon.png` | `docs/screenshots/after_style_cool_dungeon.png` |
+
+Also: `warm_day.png`, `cool_dungeon.png`, `motion_00–03.png`.
+
+**Renderer:** Forward+ (`rendering/renderer/rendering_method=forward_plus`). CI: `tools/ci/render_forward_smoke.sh` (zero `ERROR:` lines).
 
 ## Mood resource (`RenderMoodResource`)
 
 | Field | Role |
 |-------|------|
 | `key_light_color`, `key_light_energy` | Sun warmth / strength |
-| `ambient_color`, `ambient_energy` | Cool/warm fill |
-| `shadow_tint`, `mid_tint`, `highlight_tint` | Cel band hues |
-| `rim_tint`, `rim_strength` | Edge separation |
-| `fog_color`, `fog_density`, `fog_aerial_perspective` | Depth / mood |
-| `ssao_intensity` | Contact shadow feel |
-| `band_count` | 2–4 cel steps |
-| `outline_dark`, `outline_light` | Post outline contrast |
+| `ambient_color`, `ambient_energy` | Fill (kept moderate for band contrast) |
+| `shadow_tint`, `mid_tint`, `highlight_tint`, `top_tint` | Cel bands (cool shadow, warm light/top) |
+| `rim_tint`, `rim_strength` | Back/rim separation |
+| `fog_*`, `ssao_intensity` | Depth and contact |
+| `band_count`, `band_dither_strength` | Cel steps + optional dither |
+| `outline_light`, `outline_darken`, `outline_cool_shift`, `crease_*` | Post edge stylization |
 
 Presets: `resources/moods/warm_day.tres`, `resources/moods/cool_dungeon.tres`.
 
 ## Assets
 
 - **Blender** → glTF (.glb), low poly, shared scale
-- **Palette texture** `assets/palette/starter_palette.png` (6×1, point-filtered)
+- **Palette** `assets/palette/starter_palette.png` (6×1, nearest)
 - Textures: low resolution, nearest filtering only
 
 ## Starter palette (sRGB hex)
@@ -61,5 +85,3 @@ Presets: `resources/moods/warm_day.tres`, `resources/moods/cool_dungeon.tres`.
 | Accent | `#5b8cff` |
 | Warm | `#e8a838` |
 | Danger | `#d94f4f` |
-
-Emad can revise after first in-engine blockout.

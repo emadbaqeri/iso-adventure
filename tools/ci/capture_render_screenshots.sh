@@ -31,7 +31,9 @@ if grep -q "Can't change the size of a SubViewport" "$LOG"; then
 fi
 
 cp -f "$OUT/frame_02.png" "$OUT/warm_day.png"
+cp -f "$OUT/frame_02.png" "$OUT/after_style_warm_day.png"
 cp -f "$OUT/frame_07.png" "$OUT/cool_dungeon.png"
+cp -f "$OUT/frame_07.png" "$OUT/after_style_cool_dungeon.png"
 cp -f "$OUT/frame_00.png" "$OUT/motion_00.png"
 cp -f "$OUT/frame_01.png" "$OUT/motion_01.png"
 cp -f "$OUT/frame_02.png" "$OUT/motion_02.png"

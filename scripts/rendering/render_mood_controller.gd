@@ -10,6 +10,7 @@ const MIN_VIEWPORT_DIM := 16
 @export var composite_material_path: NodePath
 @export var post_outline_quad_path: NodePath
 @export var mood_presets: Array[RenderMoodResource] = []
+@export var render_root_path: NodePath
 @export var mood_toggle_action: StringName = &"cycle_mood"
 
 var _mood_index: int = 0
@@ -37,6 +38,12 @@ func cycle_mood() -> void:
 	apply_mood(mood_presets[_mood_index])
 
 
+func reapply_current_mood() -> void:
+	if mood_presets.is_empty():
+		return
+	apply_mood(mood_presets[_mood_index])
+
+
 func apply_mood(mood: RenderMoodResource) -> void:
 	if mood == null:
 		return
@@ -54,8 +61,8 @@ func apply_mood(mood: RenderMoodResource) -> void:
 		env.ssao_enabled = ssao_ok and mood.ssao_intensity > 0.01
 		if env.ssao_enabled:
 			env.ssao_intensity = mood.ssao_intensity
-			env.ssao_radius = 0.35
-			env.ssao_power = 1.4
+			env.ssao_radius = 0.42
+			env.ssao_power = 1.55
 		env.glow_enabled = false
 		env.ssil_enabled = false
 
@@ -69,6 +76,16 @@ func apply_mood(mood: RenderMoodResource) -> void:
 		rim.light_color = mood.rim_tint
 		rim.light_energy = mood.rim_strength * 2.4
 
+	var key_dir := Vector3(0.35, 0.75, 0.35)
+	if key != null:
+		key_dir = -key.global_transform.basis.z.normalized()
+
+	var band_dither := false
+	var band_dither_strength := mood.band_dither_strength
+	var root := get_node_or_null(render_root_path)
+	if root is PixelRenderRoot:
+		band_dither = (root as PixelRenderRoot).band_dither
+
 	for path: NodePath in cel_material_paths:
 		var mat := _resolve_material(path)
 		if mat == null:
@@ -77,13 +94,21 @@ func apply_mood(mood: RenderMoodResource) -> void:
 		mat.set_shader_parameter("band_shadow", mood.shadow_tint)
 		mat.set_shader_parameter("band_mid", mood.mid_tint)
 		mat.set_shader_parameter("band_highlight", mood.highlight_tint)
+		mat.set_shader_parameter("band_top", mood.top_tint)
 		mat.set_shader_parameter("rim_tint", mood.rim_tint)
 		mat.set_shader_parameter("rim_strength", mood.rim_strength)
+		mat.set_shader_parameter("key_light_dir", key_dir)
+		mat.set_shader_parameter("band_dither", band_dither)
+		mat.set_shader_parameter("band_dither_strength", band_dither_strength)
 
 	var outline_mat := _resolve_post_outline_material()
 	if outline_mat != null:
-		outline_mat.set_shader_parameter("outline_dark", mood.outline_dark)
+		outline_mat.set_shader_parameter("key_light_dir", key_dir)
 		outline_mat.set_shader_parameter("outline_light", mood.outline_light)
+		outline_mat.set_shader_parameter("outline_darken", mood.outline_darken)
+		outline_mat.set_shader_parameter("outline_cool_shift", mood.outline_cool_shift)
+		outline_mat.set_shader_parameter("crease_highlight_boost", mood.crease_highlight_boost)
+		outline_mat.set_shader_parameter("crease_shadow_darken", mood.crease_shadow_darken)
 
 	print("Mood: %s" % mood.mood_name)
 

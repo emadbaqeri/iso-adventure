@@ -29,9 +29,25 @@ if grep -qE 'surface_override_materials\.size\(\) = 0|set_surface_override_mater
   exit 1
 fi
 
-if grep -qE '^(ERROR:|SCRIPT ERROR:|USER ERROR:)' "$LOG"; then
+# Ubuntu CI xvfb: Vulkan may fail init then fall back to OpenGL; these two lines are benign.
+BENIGN_VULKAN_ERRORS=(
+  '^ERROR: Required Vulkan instance extension VK_KHR_surface not found\.$'
+  '^ERROR: Condition "err != OK" is true\. Returning: err$'
+)
+_vulkan_ignore=''
+for pattern in "${BENIGN_VULKAN_ERRORS[@]}"; do
+  _vulkan_ignore+="|${pattern}"
+done
+_vulkan_ignore="${_vulkan_ignore:1}"
+
+_error_lines="$(
+  grep -E '^(ERROR:|SCRIPT ERROR:|USER ERROR:)' "$LOG" \
+    | grep -Ev "$_vulkan_ignore" \
+    || true
+)"
+if [[ -n "$_error_lines" ]]; then
   echo "render_forward_smoke: ERROR lines found in log" >&2
-  grep -E '^(ERROR:|SCRIPT ERROR:|USER ERROR:)' "$LOG" >&2 || true
+  printf '%s\n' "$_error_lines" >&2
   exit 1
 fi
 

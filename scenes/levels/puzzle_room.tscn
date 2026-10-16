@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://cpuzzle_room_scene"]
+[gd_scene load_steps=14 format=3 uid="uid://cpuzzle_room_scene"]
 
 [ext_resource type="Script" path="res://scripts/puzzle/puzzle_controller.gd" id="1_controller"]
 [ext_resource type="PackedScene" uid="uid://cpushable_block" path="res://scenes/puzzle/pushable_block.tscn" id="2_block"]
@@ -9,10 +9,16 @@
 [ext_resource type="Material" path="res://materials/lowpoly_default.tres" id="7_wall"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_floor"]
-size = Vector3(16, 0.4, 12)
+size = Vector3(18, 0.4, 14)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
-size = Vector3(16, 0.4, 12)
+size = Vector3(18, 0.4, 14)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_boundary_ns"]
+size = Vector3(20, 4.0, 1.0)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_boundary_ew"]
+size = Vector3(1.0, 4.0, 16.0)
 
 [sub_resource type="BoxMesh" id="BoxMesh_wall"]
 size = Vector3(4, 2.4, 1.2)
@@ -43,6 +49,38 @@ surface_material_override/0 = ExtResource("6_floor")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Floor"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, 0)
 shape = SubResource("BoxShape3D_floor")
+
+[node name="BoundaryNorth" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -7.5)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BoundaryNorth"]
+shape = SubResource("BoxShape3D_boundary_ns")
+
+[node name="BoundarySouth" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 7.5)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BoundarySouth"]
+shape = SubResource("BoxShape3D_boundary_ns")
+
+[node name="BoundaryWest" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.5, 2, 0)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BoundaryWest"]
+shape = SubResource("BoxShape3D_boundary_ew")
+
+[node name="BoundaryEast" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.5, 2, 0)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BoundaryEast"]
+shape = SubResource("BoxShape3D_boundary_ew")
 
 [node name="WallSouth" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, -5.4)

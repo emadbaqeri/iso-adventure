@@ -27,10 +27,9 @@ extends CharacterBody3D
 @onready var _state_machine: PlayerStateMachine = $PlayerStateMachine
 @onready var _health: HealthComponent = $HealthComponent
 @onready var _hurtbox: HurtboxComponent = $Hurtbox
-@onready var _sword_rig: PlayerSwordRig = $AttackPivot/SwordRig
+@onready var _sword_rig: PlayerSwordRig = $SwordRig
 @onready var _attack_hitbox: HitboxComponent = _sword_rig.get_hitbox()
 @onready var _visual: Node3D = $Visual
-@onready var _attack_pivot: Node3D = $AttackPivot
 @onready var _body_mesh: MeshInstance3D = $Visual/Body
 @onready var _nose_mesh: MeshInstance3D = $Visual/Nose
 
@@ -115,13 +114,11 @@ func start_attack_cooldown() -> void:
 	_cooldown_left = attack_cooldown
 
 
-func align_attack_pivot_facing() -> void:
-	var forward := get_mesh_forward_flat()
-	_attack_pivot.rotation.y = PlayerFacingMath.direction_to_yaw(forward)
+func get_facing_yaw() -> float:
+	return PlayerFacingMath.direction_to_yaw(get_mesh_forward_flat())
 
 
 func set_attack_hitbox_active(active: bool) -> void:
-	align_attack_pivot_facing()
 	if active:
 		_attack_hitbox.activate()
 		_attack_hitbox.call_deferred("_apply_overlaps")
@@ -130,7 +127,7 @@ func set_attack_hitbox_active(active: bool) -> void:
 
 
 func begin_attack_visual() -> void:
-	align_attack_pivot_facing()
+	pass
 
 
 func end_attack_visual() -> void:
@@ -139,12 +136,10 @@ func end_attack_visual() -> void:
 
 
 func begin_melee_swing() -> void:
-	align_attack_pivot_facing()
-	_sword_rig.begin_swing()
+	_sword_rig.begin_swing(get_facing_yaw())
 
 
 func set_melee_swing_progress(progress: float) -> void:
-	align_attack_pivot_facing()
 	_sword_rig.set_swing_progress(progress)
 
 

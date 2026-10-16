@@ -1,38 +1,70 @@
 class_name PlayerSwordRig
 extends Node3D
 
-## Low-poly sword + arc swing; hitbox rides the swing pivot.
+enum FollowMode { FLOAT, SWING, RETURN }
 
 const SWING_ARC_DEGREES := 140.0
 const SWING_START_DEG := -70.0
 const SWING_END_DEG := 70.0
-const REST_YAW_DEG := -58.0
+const REST_SIDE_YAW_DEG := -62.0
+const REST_BLADE_PITCH_DEG := -52.0
 const BLADE_REACH := 0.92
 const TRAIL_INNER := 0.52
 const TRAIL_OUTER := 1.02
+const GLIDE_PORTION := 0.14
 
+@export_group("Hover Follow")
+@export var spring_stiffness: float = 42.0
+@export var spring_damping: float = 8.5
+@export var shoulder_offset: Vector3 = Vector3(0.46, 0.88, 0.06)
+@export var bob_amplitude: float = 0.05
+@export var bob_speed: float = 2.4
+@export var sway_degrees: float = 4.5
+
+@export_group("Sword Materials")
 @export var blade_material: Material
 @export var guard_material: Material
 @export var hilt_material: Material
 
 @onready var _swing_pivot: Node3D = $SwingPivot
+@onready var _sword_root: Node3D = $SwingPivot/Sword
 @onready var _blade: MeshInstance3D = $SwingPivot/Sword/Blade
 @onready var _guard: MeshInstance3D = $SwingPivot/Sword/Guard
 @onready var _hilt: MeshInstance3D = $SwingPivot/Sword/Hilt
 @onready var _trail: MeshInstance3D = $SwingPivot/Trail
 @onready var _hitbox: Area3D = $SwingPivot/AttackHitbox
 
+var _player: PlayerController
+var _linear_velocity: Vector3 = Vector3.ZERO
+var _mode: FollowMode = FollowMode.FLOAT
+var _time: float = 0.0
 var _trail_material: StandardMaterial3D
 var _trail_from_angle: float = 0.0
 var _trail_to_angle: float = 0.0
-var _swinging: bool = false
+var _swing_facing_yaw: float = 0.0
+var _glide_start_position: Vector3 = Vector3.ZERO
 
 
 func _ready() -> void:
-	position = Vector3(0.0, 0.75, 0.0)
+	top_level = true
+	_player = get_parent() as PlayerController
 	_apply_materials()
 	_setup_trail_material()
-	_return_to_rest(false)
+	global_position = _hover_anchor_world()
+	global_rotation = _hover_rotation_basis().get_rotation_quaternion().get_euler()
+	_apply_rest_pose()
+	_trail.visible = false
+
+
+func _physics_process(delta: float) -> void:
+	_time += delta
+	if _player == null or not is_instance_valid(_player):
+		return
+	match _mode:
+		FollowMode.FLOAT, FollowMode.RETURN:
+			_update_hover_follow(delta)
+		FollowMode.SWING:
+			pass
 
 
 func get_hitbox() -> HitboxComponent:
@@ -40,17 +72,18 @@ func get_hitbox() -> HitboxComponent:
 
 
 func return_to_rest(animate_trail_fade: bool = true) -> void:
-	_swinging = false
-	_swing_pivot.rotation.y = deg_to_rad(REST_YAW_DEG)
-	_align_hitbox_to_sword()
+	_mode = FollowMode.RETURN
+	_trail_from_angle = _swing_pivot.rotation.y
 	if animate_trail_fade:
 		_fade_trail_out()
 	else:
 		_trail.visible = false
 
 
-func begin_swing() -> void:
-	_swinging = true
+func begin_swing(facing_yaw: float) -> void:
+	_mode = FollowMode.SWING
+	_swing_facing_yaw = facing_yaw
+	_glide_start_position = global_position
 	_trail_from_angle = deg_to_rad(SWING_START_DEG)
 	_trail_to_angle = _trail_from_angle
 	_trail.visible = true
@@ -60,9 +93,23 @@ func begin_swing() -> void:
 
 
 func set_swing_progress(progress: float) -> void:
+	if _mode != FollowMode.SWING:
+		return
 	var t := clampf(progress, 0.0, 1.0)
-	var angle := deg_to_rad(lerpf(SWING_START_DEG, SWING_END_DEG, t))
+	var swing_center := _swing_center_world()
+	if t <= GLIDE_PORTION:
+		var glide_t := t / GLIDE_PORTION
+		global_position = _glide_start_position.lerp(swing_center, glide_t)
+		_sword_root.rotation.x = deg_to_rad(
+			lerpf(REST_BLADE_PITCH_DEG, 0.0, glide_t)
+		)
+	else:
+		global_position = swing_center
+		_sword_root.rotation.x = 0.0
+	var arc_t := clampf((t - GLIDE_PORTION) / (1.0 - GLIDE_PORTION), 0.0, 1.0)
+	var angle := deg_to_rad(lerpf(SWING_START_DEG, SWING_END_DEG, arc_t))
 	_swing_pivot.rotation.y = angle
+	global_rotation = Vector3(0.0, _swing_facing_yaw, 0.0)
 	_trail_to_angle = angle
 	_rebuild_trail_mesh()
 	_align_hitbox_to_sword()
@@ -70,6 +117,66 @@ func set_swing_progress(progress: float) -> void:
 
 func swing_arc_degrees() -> float:
 	return SWING_ARC_DEGREES
+
+
+func is_top_level_floater() -> bool:
+	return top_level
+
+
+func _update_hover_follow(delta: float) -> void:
+	var anchor := _hover_anchor_world()
+	_spring_position_toward(anchor, delta)
+	var target_quat := _hover_rotation_basis().get_rotation_quaternion()
+	var blend := 1.0 - exp(-10.0 * delta)
+	global_rotation = Quaternion.from_euler(global_rotation).slerp(target_quat, blend).get_euler()
+	_apply_rest_pose()
+	if _mode == FollowMode.RETURN:
+		var yaw_delta := absf(wrapf(
+			_swing_pivot.rotation.y - deg_to_rad(REST_SIDE_YAW_DEG), -PI, PI
+		))
+		if global_position.distance_to(anchor) < 0.04 and yaw_delta < 0.05:
+			_mode = FollowMode.FLOAT
+
+
+func _spring_position_toward(target: Vector3, delta: float) -> void:
+	var displacement := target - global_position
+	var acceleration := displacement * spring_stiffness - _linear_velocity * spring_damping
+	_linear_velocity += acceleration * delta
+	global_position += _linear_velocity * delta
+
+
+func _hover_anchor_world() -> Vector3:
+	var bob := sin(_time * bob_speed) * bob_amplitude
+	if _player == null:
+		return global_position
+	var basis := _player.global_transform.basis
+	var offset := basis.x * shoulder_offset.x
+	offset += Vector3.UP * shoulder_offset.y
+	offset += basis.z * shoulder_offset.z
+	return _player.global_position + offset + Vector3(0.0, bob, 0.0)
+
+
+func _hover_rotation_basis() -> Basis:
+	if _player == null:
+		return Basis.IDENTITY
+	var yaw := _player.rotation.y
+	var sway_y := deg_to_rad(sin(_time * bob_speed * 0.85) * sway_degrees)
+	var sway_z := deg_to_rad(cos(_time * bob_speed * 0.6) * sway_degrees * 0.5)
+	return Basis.from_euler(Vector3(0.0, yaw + sway_y, sway_z))
+
+
+func _swing_center_world() -> Vector3:
+	if _player == null:
+		return global_position
+	return _player.global_position + Vector3(0.0, 0.78, 0.0)
+
+
+func _apply_rest_pose() -> void:
+	if _mode == FollowMode.SWING:
+		return
+	var side_sway := deg_to_rad(sin(_time * bob_speed * 1.1) * sway_degrees * 0.6)
+	_swing_pivot.rotation = Vector3(0.0, deg_to_rad(REST_SIDE_YAW_DEG) + side_sway, 0.0)
+	_sword_root.rotation.x = deg_to_rad(REST_BLADE_PITCH_DEG)
 
 
 func _apply_materials() -> void:
@@ -89,11 +196,6 @@ func _setup_trail_material() -> void:
 	_trail_material.emission_enabled = true
 	_trail_material.emission = Color(0.35, 0.55, 0.85) * 0.25
 	_trail.material_override = _trail_material
-	_trail.visible = false
-
-
-func _return_to_rest(_animate: bool) -> void:
-	return_to_rest(false)
 
 
 func _align_hitbox_to_sword() -> void:

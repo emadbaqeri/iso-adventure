@@ -76,40 +76,38 @@ health_path = NodePath("../HealthComponent")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Hurtbox"]
 shape = SubResource("CapsuleShape3D_hurt")
 
-[node name="AttackPivot" type="Node3D" parent="."]
-
-[node name="SwordRig" type="Node3D" parent="AttackPivot"]
+[node name="SwordRig" type="Node3D" parent="."]
 script = ExtResource("12_sword")
 blade_material = ExtResource("6_mat")
 guard_material = ExtResource("7_nose")
 hilt_material = ExtResource("8_warm")
 
-[node name="SwingPivot" type="Node3D" parent="AttackPivot/SwordRig"]
+[node name="SwingPivot" type="Node3D" parent="SwordRig"]
 
-[node name="Sword" type="Node3D" parent="AttackPivot/SwordRig/SwingPivot"]
+[node name="Sword" type="Node3D" parent="SwordRig/SwingPivot"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.18)
 
-[node name="Hilt" type="MeshInstance3D" parent="AttackPivot/SwordRig/SwingPivot/Sword"]
+[node name="Hilt" type="MeshInstance3D" parent="SwordRig/SwingPivot/Sword"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.08)
 mesh = SubResource("BoxMesh_hilt")
 
-[node name="Guard" type="MeshInstance3D" parent="AttackPivot/SwordRig/SwingPivot/Sword"]
+[node name="Guard" type="MeshInstance3D" parent="SwordRig/SwingPivot/Sword"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.02)
 mesh = SubResource("BoxMesh_guard")
 
-[node name="Blade" type="MeshInstance3D" parent="AttackPivot/SwordRig/SwingPivot/Sword"]
+[node name="Blade" type="MeshInstance3D" parent="SwordRig/SwingPivot/Sword"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.48)
 mesh = SubResource("BoxMesh_blade")
 
-[node name="Trail" type="MeshInstance3D" parent="AttackPivot/SwordRig/SwingPivot"]
+[node name="Trail" type="MeshInstance3D" parent="SwordRig/SwingPivot"]
 
-[node name="AttackHitbox" type="Area3D" parent="AttackPivot/SwordRig/SwingPivot"]
+[node name="AttackHitbox" type="Area3D" parent="SwordRig/SwingPivot"]
 collision_layer = 4
 collision_mask = 8
 monitoring = false
 script = ExtResource("11_hit")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="AttackPivot/SwordRig/SwingPivot/AttackHitbox"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SwordRig/SwingPivot/AttackHitbox"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.5)
 shape = SubResource("BoxShape3D_attack")
 

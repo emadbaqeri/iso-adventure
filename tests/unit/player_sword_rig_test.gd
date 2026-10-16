@@ -6,9 +6,7 @@ const PLAYER_SCENE := "res://scenes/player/player.tscn"
 func test_trail_uses_material_override_not_surface_zero() -> void:
 	var runner := scene_runner(PLAYER_SCENE)
 	await _wait(runner, 2)
-	var trail := runner.scene().get_node(
-		"AttackPivot/SwordRig/SwingPivot/Trail"
-	) as MeshInstance3D
+	var trail := runner.scene().get_node("SwordRig/SwingPivot/Trail") as MeshInstance3D
 	assert_object(trail.material_override).is_not_null()
 	rig_begin(runner.scene())
 	rig_set_progress(runner.scene(), 0.5)
@@ -17,17 +15,27 @@ func test_trail_uses_material_override_not_surface_zero() -> void:
 	assert_object(trail.material_override).is_not_null()
 
 
+func test_sword_floats_top_level_with_spring_exports() -> void:
+	var runner := scene_runner(PLAYER_SCENE)
+	await _wait(runner, 2)
+	var rig := runner.scene().get_node("SwordRig") as PlayerSwordRig
+	assert_bool(rig.is_top_level_floater()).is_true()
+	assert_float(rig.spring_stiffness).is_greater(0.0)
+	assert_float(rig.spring_damping).is_greater(0.0)
+	assert_float(rig.bob_amplitude).is_greater_equal(0.04)
+
+
 func test_sword_rig_has_wide_swing_arc() -> void:
 	var runner := scene_runner(PLAYER_SCENE)
 	await _wait(runner, 2)
-	var rig := runner.scene().get_node("AttackPivot/SwordRig") as PlayerSwordRig
+	var rig := runner.scene().get_node("SwordRig") as PlayerSwordRig
 	assert_float(rig.swing_arc_degrees()).is_greater_equal(120.0)
 
 
 func test_swing_progress_moves_pivot_without_zero_scale() -> void:
 	var runner := scene_runner(PLAYER_SCENE)
 	await _wait(runner, 2)
-	var pivot := runner.scene().get_node("AttackPivot/SwordRig/SwingPivot") as Node3D
+	var pivot := runner.scene().get_node("SwordRig/SwingPivot") as Node3D
 	var start_y := pivot.rotation.y
 	rig_begin(runner.scene())
 	rig_set_progress(runner.scene(), 1.0)
@@ -39,12 +47,13 @@ func test_swing_progress_moves_pivot_without_zero_scale() -> void:
 
 
 func rig_begin(player_root: Node) -> void:
-	var rig := player_root.get_node("AttackPivot/SwordRig") as PlayerSwordRig
-	rig.begin_swing()
+	var rig := player_root.get_node("SwordRig") as PlayerSwordRig
+	var player := player_root as PlayerController
+	rig.begin_swing(player.get_facing_yaw())
 
 
 func rig_set_progress(player_root: Node, progress: float) -> void:
-	var rig := player_root.get_node("AttackPivot/SwordRig") as PlayerSwordRig
+	var rig := player_root.get_node("SwordRig") as PlayerSwordRig
 	rig.set_swing_progress(progress)
 
 

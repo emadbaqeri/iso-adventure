@@ -44,7 +44,11 @@ jobs:
         run: .ci/godot/Godot --headless --path . --import
 
       - name: Run gdUnit4 unit tests
-        run: ./addons/gdUnit4/runtest.sh --godot_binary .ci/godot/Godot -a res://tests/unit
+        env:
+          DISPLAY: ":99"
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb
+          xvfb-run -a ./addons/gdUnit4/runtest.sh --godot_binary .ci/godot/Godot -a res://tests/unit
 
       - name: Run scene smoke test
         run: .ci/godot/Godot --headless --path . -s res://tests/smoke/scene_smoke_runner.gd

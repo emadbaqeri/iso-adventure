@@ -8,6 +8,7 @@ const MIN_VIEWPORT_DIM := 16
 @export var rim_light_path: NodePath
 @export var cel_material_paths: Array[NodePath] = []
 @export var composite_material_path: NodePath
+@export var post_outline_quad_path: NodePath
 @export var mood_presets: Array[RenderMoodResource] = []
 @export var mood_toggle_action: StringName = &"cycle_mood"
 
@@ -79,10 +80,10 @@ func apply_mood(mood: RenderMoodResource) -> void:
 		mat.set_shader_parameter("rim_tint", mood.rim_tint)
 		mat.set_shader_parameter("rim_strength", mood.rim_strength)
 
-	var composite := _resolve_composite_material()
-	if composite != null:
-		composite.set_shader_parameter("outline_dark", mood.outline_dark)
-		composite.set_shader_parameter("outline_light", mood.outline_light)
+	var outline_mat := _resolve_post_outline_material()
+	if outline_mat != null:
+		outline_mat.set_shader_parameter("outline_dark", mood.outline_dark)
+		outline_mat.set_shader_parameter("outline_light", mood.outline_light)
 
 	print("Mood: %s" % mood.mood_name)
 
@@ -106,12 +107,15 @@ func _resolve_material(path: NodePath) -> ShaderMaterial:
 	return null
 
 
-func _resolve_composite_material() -> ShaderMaterial:
-	if composite_material_path == NodePath():
-		return null
-	var node := get_node_or_null(composite_material_path)
-	if node is SubViewportContainer:
-		return _material_as_shader((node as SubViewportContainer).material)
+func _resolve_post_outline_material() -> ShaderMaterial:
+	if post_outline_quad_path != NodePath():
+		var quad := get_node_or_null(post_outline_quad_path)
+		if quad is MeshInstance3D:
+			return _material_as_shader((quad as MeshInstance3D).material_override)
+	if composite_material_path != NodePath():
+		var node := get_node_or_null(composite_material_path)
+		if node is SubViewportContainer:
+			return _material_as_shader((node as SubViewportContainer).material)
 	return null
 
 

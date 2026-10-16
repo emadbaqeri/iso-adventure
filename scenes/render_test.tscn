@@ -11,6 +11,8 @@
 [ext_resource type="Resource" path="res://resources/moods/warm_day.tres" id="11_warm"]
 [ext_resource type="Resource" path="res://resources/moods/cool_dungeon.tres" id="12_dungeon"]
 [ext_resource type="Material" path="res://materials/pixel_viewport_composite.tres" id="13_composite"]
+[ext_resource type="Script" path="res://scripts/rendering/pixel_post_quad.gd" id="14_post_quad"]
+[ext_resource type="Material" path="res://materials/pixel_post.tres" id="15_post"]
 
 [sub_resource type="Environment" id="Environment_render"]
 background_mode = 1
@@ -69,6 +71,10 @@ light_color = Color(1, 0.9, 0.72, 1)
 light_energy = 1.45
 shadow_enabled = true
 directional_shadow_mode = 1
+directional_shadow_max_distance = 40.0
+shadow_bias = 0.42
+shadow_normal_bias = 4.8
+directional_shadow_pancake_size = 28.0
 shadow_filter = 0
 shadow_blur = 0.0
 
@@ -85,6 +91,7 @@ key_light_path = NodePath("../Sun")
 rim_light_path = NodePath("../RimLight")
 cel_material_paths = Array[NodePath]([NodePath("../World/Floor"), NodePath("../World/CubeA"), NodePath("../World/CubeB"), NodePath("../World/PillarA"), NodePath("../World/PillarB"), NodePath("../World/MovingCube")])
 composite_material_path = NodePath("../../SubViewportContainer")
+post_outline_quad_path = NodePath("../PixelCameraRig/Camera3D/PixelPostQuad")
 mood_presets = Array[ExtResource("11_warm")]([ExtResource("11_warm"), ExtResource("12_dungeon")])
 
 [node name="World" type="Node3D" parent="SubViewportContainer/SubViewport"]
@@ -130,3 +137,7 @@ follow_offset = Vector3(0, 4, 2)
 projection = 1
 size = 11.0
 current = true
+
+[node name="PixelPostQuad" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/PixelCameraRig/Camera3D"]
+material_override = ExtResource("15_post")
+script = ExtResource("14_post_quad")

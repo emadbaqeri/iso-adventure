@@ -8,8 +8,9 @@ uniform sampler2D normal_roughness_texture : hint_normal_roughness_texture, filt
 uniform vec2 viewport_size = vec2(640.0, 360.0);
 uniform float depth_edge_scale = 2800.0;
 uniform float normal_edge_scale = 3.8;
-uniform float normal_top_boost = 1.65;
+uniform float normal_top_boost = 1.35;
 uniform float depth_threshold = 0.02;
+uniform float depth_curvature_threshold = 0.004;
 uniform float normal_threshold = 0.18;
 uniform vec4 outline_dark : source_color = vec4(0.12, 0.06, 0.22, 1.0);
 uniform vec4 outline_light : source_color = vec4(0.78, 0.88, 1.0, 1.0);
@@ -45,7 +46,7 @@ float sample_normal_edge(vec2 uv, vec2 px, vec3 normal_c) {
 		max(1.0 - dot(normal_c, normal_e), 1.0 - dot(normal_c, normal_w))
 	);
 	edge = max(edge, max(1.0 - dot(normal_c, normal_ne), 1.0 - dot(normal_c, normal_nw)));
-	if (normal_c.y > 0.35) {
+	if (normal_c.y > 0.35 && edge > normal_threshold * 0.5) {
 		edge *= normal_top_boost;
 	}
 	return edge * normal_edge_scale;
@@ -62,13 +63,26 @@ void fragment() {
 	float depth_s = texture(depth_texture, uv + vec2(0.0, px.y)).r;
 	float depth_e = texture(depth_texture, uv + vec2(px.x, 0.0)).r;
 	float depth_w = texture(depth_texture, uv + vec2(-px.x, 0.0)).r;
-	float depth_edge = max(
+	float depth_grad = max(
 		max(abs(depth_c - depth_n), abs(depth_c - depth_s)),
 		max(abs(depth_c - depth_e), abs(depth_c - depth_w))
-	) * depth_edge_scale;
+	);
+	float depth_lap = abs(depth_e + depth_w - 2.0 * depth_c) + abs(depth_n + depth_s - 2.0 * depth_c);
+	float depth_edge = 0.0;
+	if (depth_lap * depth_edge_scale > depth_curvature_threshold) {
+		depth_edge = depth_grad * depth_edge_scale;
+	}
 
 	vec3 normal_c = texture(normal_roughness_texture, uv).rgb * 2.0 - 1.0;
+	// Flat upward surfaces have linear depth (zero curvature); skip depth false positives on floors.
+	if (normal_c.y > 0.9) {
+		depth_edge = 0.0;
+	}
+
 	float normal_edge = sample_normal_edge(uv, px, normal_c);
+	if (normal_c.y > 0.9 && normal_edge < normal_threshold * 1.75) {
+		normal_edge = 0.0;
+	}
 
 	bool is_edge = depth_edge > depth_threshold || normal_edge > normal_threshold;
 	if (is_edge) {

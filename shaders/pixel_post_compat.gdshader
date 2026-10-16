@@ -8,6 +8,7 @@ uniform vec2 viewport_size = vec2(640.0, 360.0);
 uniform float depth_edge_scale = 2800.0;
 uniform float color_edge_scale = 12.0;
 uniform float depth_threshold = 0.02;
+uniform float depth_curvature_threshold = 0.004;
 uniform float color_threshold = 0.08;
 uniform vec4 outline_dark : source_color = vec4(0.12, 0.06, 0.22, 1.0);
 uniform vec4 outline_light : source_color = vec4(0.78, 0.88, 1.0, 1.0);
@@ -41,10 +42,15 @@ void fragment() {
 	float depth_s = texture(depth_texture, uv + vec2(0.0, px.y)).r;
 	float depth_e = texture(depth_texture, uv + vec2(px.x, 0.0)).r;
 	float depth_w = texture(depth_texture, uv + vec2(-px.x, 0.0)).r;
-	float depth_edge = max(
+	float depth_grad = max(
 		max(abs(depth_c - depth_n), abs(depth_c - depth_s)),
 		max(abs(depth_c - depth_e), abs(depth_c - depth_w))
-	) * depth_edge_scale;
+	);
+	float depth_lap = abs(depth_e + depth_w - 2.0 * depth_c) + abs(depth_n + depth_s - 2.0 * depth_c);
+	float depth_edge = 0.0;
+	if (depth_lap * depth_edge_scale > depth_curvature_threshold) {
+		depth_edge = depth_grad * depth_edge_scale;
+	}
 
 	vec3 col_n = texture(screen_texture, uv + vec2(0.0, -px.y)).rgb;
 	vec3 col_s = texture(screen_texture, uv + vec2(0.0, px.y)).rgb;

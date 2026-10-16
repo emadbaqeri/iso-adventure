@@ -1,0 +1,47 @@
+[gd_scene load_steps=7 format=3 uid="uid://cchase_wall_harness"]
+
+[ext_resource type="PackedScene" uid="uid://cplayer_scene" path="res://scenes/player/player.tscn" id="1_player"]
+[ext_resource type="PackedScene" uid="uid://cslime_enemy" path="res://scenes/enemies/slime.tscn" id="2_slime"]
+[ext_resource type="Script" path="res://scripts/levels/test_room_navigation.gd" id="3_nav"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
+size = Vector3(20, 0.4, 12)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wall"]
+size = Vector3(0.8, 2.4, 8)
+
+[sub_resource type="NavigationMesh" id="NavigationMesh_harness"]
+agent_radius = 0.45
+agent_height = 1.4
+cell_size = 0.25
+cell_height = 0.2
+
+[node name="ChaseWallHarness" type="Node3D"]
+
+[node name="World" type="Node3D" parent="."]
+
+[node name="Floor" type="StaticBody3D" parent="World"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Floor"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, 0)
+shape = SubResource("BoxShape3D_floor")
+
+[node name="CenterWall" type="StaticBody3D" parent="World"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/CenterWall"]
+shape = SubResource("BoxShape3D_wall")
+
+[node name="NavigationRegion3D" type="NavigationRegion3D" parent="World"]
+navigation_mesh = SubResource("NavigationMesh_harness")
+script = ExtResource("3_nav")
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, 0)
+
+[node name="Slime" parent="." instance=ExtResource("2_slime")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 0)

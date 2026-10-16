@@ -1,0 +1,94 @@
+[gd_scene load_steps=18 format=3 uid="uid://cslime_enemy"]
+
+[ext_resource type="Script" path="res://scripts/enemies/slime/slime_enemy.gd" id="1_slime"]
+[ext_resource type="Script" path="res://scripts/enemies/slime/slime_state_machine.gd" id="2_sm"]
+[ext_resource type="Script" path="res://scripts/enemies/slime/slime_idle_state.gd" id="3_idle"]
+[ext_resource type="Script" path="res://scripts/enemies/slime/slime_chase_state.gd" id="4_chase"]
+[ext_resource type="Script" path="res://scripts/enemies/slime/slime_attack_state.gd" id="5_attack"]
+[ext_resource type="Script" path="res://scripts/enemies/slime/slime_hurt_state.gd" id="6_hurt"]
+[ext_resource type="Script" path="res://scripts/enemies/slime/slime_dead_state.gd" id="7_dead"]
+[ext_resource type="Script" path="res://scripts/components/health_component.gd" id="8_health"]
+[ext_resource type="Script" path="res://scripts/components/hurtbox_component.gd" id="9_hurt"]
+[ext_resource type="Script" path="res://scripts/components/hitbox_component.gd" id="10_hit"]
+[ext_resource type="Script" path="res://scripts/ui/slime_health_billboard.gd" id="11_billboard"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_slime"]
+albedo_color = Color(0.35, 0.78, 0.42, 1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_body"]
+radius = 0.55
+height = 0.9
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_body"]
+radius = 0.5
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_hurt"]
+radius = 0.58
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_attack"]
+size = Vector3(0.9, 0.7, 1.0)
+
+[node name="Slime" type="CharacterBody3D"]
+collision_layer = 16
+collision_mask = 3
+script = ExtResource("1_slime")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.75, 0, 0, 0, 1, 0, 0.45, 0)
+shape = SubResource("SphereShape3D_body")
+
+[node name="Visual" type="Node3D" parent="."]
+
+[node name="Body" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 0.75, 0, 0, 0, 1, 0, 0.45, 0)
+mesh = SubResource("SphereMesh_body")
+surface_material_override/0 = SubResource("StandardMaterial3D_slime")
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("8_health")
+max_health = 3
+invincibility_duration = 0.15
+
+[node name="Hurtbox" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+collision_layer = 8
+collision_mask = 0
+script = ExtResource("9_hurt")
+health_path = NodePath("../HealthComponent")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Hurtbox"]
+shape = SubResource("SphereShape3D_hurt")
+
+[node name="AttackHitbox" type="Area3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, -0.55)
+collision_layer = 4
+collision_mask = 8
+monitoring = false
+script = ExtResource("10_hit")
+damage = 1
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="AttackHitbox"]
+shape = SubResource("BoxShape3D_attack")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+
+[node name="HealthBillboard" type="Node3D" parent="."]
+script = ExtResource("11_billboard")
+health_path = NodePath("../HealthComponent")
+
+[node name="SlimeStateMachine" type="Node" parent="."]
+script = ExtResource("2_sm")
+
+[node name="Idle" type="Node" parent="SlimeStateMachine"]
+script = ExtResource("3_idle")
+
+[node name="Chase" type="Node" parent="SlimeStateMachine"]
+script = ExtResource("4_chase")
+
+[node name="Attack" type="Node" parent="SlimeStateMachine"]
+script = ExtResource("5_attack")
+
+[node name="Hurt" type="Node" parent="SlimeStateMachine"]
+script = ExtResource("6_hurt")
+
+[node name="Dead" type="Node" parent="SlimeStateMachine"]
+script = ExtResource("7_dead")

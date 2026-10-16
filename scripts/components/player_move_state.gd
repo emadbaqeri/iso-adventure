@@ -6,7 +6,9 @@ func physics_update(delta: float) -> void:
 	var controller := machine.owner_body as PlayerController
 	if controller == null:
 		return
-	if controller.get_input_vector().length_squared() <= 0.01:
+	if Input.is_action_just_pressed("attack") and controller.request_attack():
+		return
+	if not controller.has_move_input():
 		machine.change_state(&"Idle")
 		return
 	var direction := controller.get_world_move_direction()

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RenderMoodResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/rendering/render_mood_resource.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+mood_name = "Warm Day"
+key_light_color = Color(1, 0.94, 0.82, 1)
+key_light_energy = 1.25
+ambient_color = Color(0.48, 0.56, 0.7, 1)
+ambient_energy = 0.38
+sky_top_color = Color(0.42, 0.52, 0.72, 1)
+sky_horizon_color = Color(0.68, 0.76, 0.88, 1)
+fog_enabled = true
+fog_color = Color(0.58, 0.68, 0.82, 1)
+fog_density = 0.008
+fog_aerial_perspective = 0.32
+ssao_intensity = 0.42

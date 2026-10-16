@@ -44,7 +44,7 @@ jobs:
           if [ ! -f "$TEMPLATE_DIR/linux_debug.x86_64" ]; then
             curl -fsSL -o .ci/templates.tpz \
               "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_export_templates.tpz"
-            unzip -q .ci/templates.tpz -d .ci/templates
+            unzip -oq .ci/templates.tpz -d .ci/templates
             mkdir -p "$TEMPLATE_DIR"
             cp -r .ci/templates/templates/* "$TEMPLATE_DIR/"
           fi

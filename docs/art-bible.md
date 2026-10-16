@@ -1,30 +1,47 @@
-# Art bible — 3D isometric pixel art
+# Art bible — 3D isometric low-poly
 
-## Look
+## Style
 
-Low-res 3D rendered into a **SubViewport** (e.g. 640×360), upscaled with **nearest-neighbor**. Orthographic camera at **~30–45°** isometric; snap camera to texel/pixel grid where possible.
+**3D isometric low-poly:** simple meshes (Blender → glTF) with **flat** `StandardMaterial3D` colors from a small palette. Native **1280×720** render with **MSAA** (Forward+). No low-res SubViewport, pixel snapping, or screen-space outline passes.
 
-## Shaders (planned)
+## Camera
 
-- Toon/cel: hard color bands
-- Outline pass: depth + normal discontinuities, pixel-aligned
-- Optional palette quantization / ordered dither on final composite
+- `IsoCameraRig`: orthographic, **~35° pitch** and **45° yaw**, smooth follow of a target with `follow_offset` and `follow_smooth`.
+- Test scene: follows `MovingCube` with `ortho_size` ~14.
 
-## Assets
+## Lighting & environment
 
-- **Blender** → glTF (.glb), low poly, shared scale
-- One **palette texture** (point-filtered); per-object UVs sample palette
-- Textures: low resolution, nearest filtering only
+| Element | Notes |
+|---------|--------|
+| Sun | `DirectionalLight3D`, **soft PCF shadows** (bias tuned to avoid acne) |
+| Sky | `ProceduralSkyMaterial` + ambient |
+| SSAO | Contact shading at object bases |
+| Fog | Light density for depth |
+| Tonemap | **ACES** (`Environment.tonemap_mode`) |
 
-## Starter palette (sRGB hex)
+## Moods
 
-| Role | Hex |
+`RenderMoodResource` presets (`warm_day`, `cool_dungeon`) adjust sun, ambient, sky, fog, and SSAO only. **M** toggles moods in `render_test`.
+
+## Palette (starter)
+
+| Role | Use |
 |------|-----|
-| Shadow | `#1c2330` |
-| Mid | `#3d4f6f` |
-| Highlight | `#8fa4c4` |
-| Accent | `#5b8cff` |
-| Warm | `#e8a838` |
-| Danger | `#d94f4f` |
+| Floor gray-blue | `materials/lowpoly_floor.tres` |
+| Default gray | `lowpoly_default.tres` |
+| Accent blue | `lowpoly_accent.tres` |
+| Warm gold | `lowpoly_warm.tres` |
 
-Emad can revise after first in-engine blockout.
+Texture reference: `assets/palette/starter_palette.png` (authoring guide; materials use flat colors).
+
+## Pipeline
+
+1. Model in Blender at **fixed world scale**, export **glTF**.
+2. Assign `StandardMaterial3D` (roughness 1, no specular) per mesh or surface.
+3. Place in scenes; use `IsoCameraRig` + `WorldEnvironment` as in `scenes/render_test.tscn`.
+
+## Test scene
+
+`scenes/render_test.tscn` — floor, cubes, pillars, sliding cube. Screenshots: `docs/screenshots/warm_day.png`, `cool_dungeon.png`.
+
+**CI:** `tools/ci/render_forward_smoke.sh` (Forward+, zero `ERROR:` lines).

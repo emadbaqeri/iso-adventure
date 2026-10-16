@@ -4,7 +4,11 @@ extends SceneTree
 
 
 func _initialize() -> void:
-	var failures: PackedStringArray = _run_smoke()
+	call_deferred("_run")
+
+
+func _run() -> void:
+	var failures: PackedStringArray = await _run_smoke()
 	if failures.is_empty():
 		print("Scene smoke: OK (%d scenes)" % _count_scenes())
 		quit(0)
@@ -36,7 +40,14 @@ func _run_smoke() -> PackedStringArray:
 		if instance == null:
 			failures.append("Failed to instantiate: %s" % scene_path)
 			continue
-		instance.free()
+		if scene_path.ends_with("render_test.tscn"):
+			get_root().add_child(instance)
+			for _i: int in range(8):
+				await process_frame
+			instance.queue_free()
+			await process_frame
+		else:
+			instance.free()
 	return failures
 
 

@@ -1,0 +1,50 @@
+[gd_scene load_steps=7 format=3 uid="uid://cplayer_scene"]
+
+[ext_resource type="Script" path="res://scripts/player/player_controller.gd" id="1_controller"]
+[ext_resource type="Script" path="res://scripts/components/player_state_machine.gd" id="2_sm"]
+[ext_resource type="Script" path="res://scripts/components/player_idle_state.gd" id="3_idle"]
+[ext_resource type="Script" path="res://scripts/components/player_move_state.gd" id="4_move"]
+[ext_resource type="Material" path="res://materials/lowpoly_default.tres" id="5_mat"]
+[ext_resource type="Material" path="res://materials/lowpoly_accent.tres" id="6_nose"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
+radius = 0.35
+height = 1.1
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_body"]
+radius = 0.35
+height = 1.1
+
+[sub_resource type="BoxMesh" id="BoxMesh_nose"]
+size = Vector3(0.22, 0.22, 0.45)
+
+[node name="Player" type="CharacterBody3D"]
+collision_layer = 2
+collision_mask = 1
+floor_snap_length = 0.15
+script = ExtResource("1_controller")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.65, 0)
+shape = SubResource("CapsuleShape3D_body")
+
+[node name="Visual" type="Node3D" parent="."]
+
+[node name="Body" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.65, 0)
+mesh = SubResource("CapsuleMesh_body")
+surface_material_override/0 = ExtResource("5_mat")
+
+[node name="Nose" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, -0.55)
+mesh = SubResource("BoxMesh_nose")
+surface_material_override/0 = ExtResource("6_nose")
+
+[node name="PlayerStateMachine" type="Node" parent="."]
+script = ExtResource("2_sm")
+
+[node name="Idle" type="Node" parent="PlayerStateMachine"]
+script = ExtResource("3_idle")
+
+[node name="Move" type="Node" parent="PlayerStateMachine"]
+script = ExtResource("4_move")

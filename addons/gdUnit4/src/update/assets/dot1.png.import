@@ -3,15 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c1bvib5v5x7sq"
-path="res://.godot/imported/dot1.png-380baf1b5247addda93bce3c799aa4e7.ctex"
-metadata={
-"vram_texture": false
-}
+valid=false
 
 [deps]
 
 source_file="res://addons/gdUnit4/src/update/assets/dot1.png"
-dest_files=["res://.godot/imported/dot1.png-380baf1b5247addda93bce3c799aa4e7.ctex"]
 
 [params]
 

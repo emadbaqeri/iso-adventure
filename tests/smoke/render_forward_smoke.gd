@@ -14,9 +14,9 @@ func _initialize() -> void:
 
 
 func _boot() -> void:
-	var packed := load("res://scenes/render_test.tscn") as PackedScene
+	var packed := load("res://scenes/levels/test_room.tscn") as PackedScene
 	if packed == null:
-		push_error("render_forward_smoke: failed to load render_test")
+		push_error("render_forward_smoke: failed to load test_room")
 		quit(1)
 		return
 	var scene := packed.instantiate()

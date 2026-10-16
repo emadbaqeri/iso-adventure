@@ -8,4 +8,4 @@ func test_godot_major_version_is_four() -> void:
 
 func test_main_scene_path_is_set() -> void:
 	var main_scene: String = ProjectSettings.get_setting("application/run/main_scene")
-	assert_str(main_scene).is_equal("res://scenes/render_test.tscn")
+	assert_str(main_scene).is_equal("res://scenes/levels/test_room.tscn")

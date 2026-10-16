@@ -1,0 +1,20 @@
+[gd_scene load_steps=4 format=3 uid="uid://cpuzzle_door_harness"]
+
+[ext_resource type="Script" path="res://scripts/puzzle/puzzle_controller.gd" id="1_controller"]
+[ext_resource type="PackedScene" uid="uid://cpressure_switch" path="res://scenes/puzzle/pressure_switch.tscn" id="2_switch"]
+[ext_resource type="PackedScene" uid="uid://cpuzzle_door" path="res://scenes/puzzle/door.tscn" id="3_door"]
+
+[node name="PuzzleDoorHarness" type="Node3D"]
+
+[node name="PuzzleController" type="Node3D" parent="."]
+script = ExtResource("1_controller")
+switch_paths = Array[NodePath]([NodePath("../SwitchA"), NodePath("../SwitchB")])
+door_path = NodePath("../Door")
+
+[node name="SwitchA" parent="." instance=ExtResource("2_switch")]
+
+[node name="SwitchB" parent="." instance=ExtResource("2_switch")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0)
+
+[node name="Door" parent="." instance=ExtResource("3_door")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2)

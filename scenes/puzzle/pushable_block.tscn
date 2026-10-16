@@ -1,0 +1,24 @@
+[gd_scene load_steps=5 format=3 uid="uid://cpushable_block"]
+
+[ext_resource type="Script" path="res://scripts/puzzle/pushable_block.gd" id="1_script"]
+[ext_resource type="Material" path="res://materials/lowpoly_warm.tres" id="2_mat"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_block"]
+size = Vector3(1.85, 1.2, 1.85)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_block"]
+size = Vector3(1.85, 1.2, 1.85)
+
+[node name="PushableBlock" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+script = ExtResource("1_script")
+
+[node name="Mesh" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+mesh = SubResource("BoxMesh_block")
+surface_material_override/0 = ExtResource("2_mat")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("BoxShape3D_block")

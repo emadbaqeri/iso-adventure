@@ -1,7 +1,9 @@
-[gd_scene load_steps=21 format=3 uid="uid://ctest_room_scene"]
+[gd_scene load_steps=23 format=3 uid="uid://ctest_room_scene"]
 
 [ext_resource type="PackedScene" uid="uid://cplayer_scene" path="res://scenes/player/player.tscn" id="1_player"]
 [ext_resource type="PackedScene" uid="uid://cslime_enemy" path="res://scenes/enemies/slime.tscn" id="2_slime"]
+[ext_resource type="PackedScene" uid="uid://cpuzzle_access_gate" path="res://scenes/levels/puzzle_access_gate.tscn" id="12_gate"]
+[ext_resource type="PackedScene" uid="uid://cpuzzle_room_scene" path="res://scenes/levels/puzzle_room.tscn" id="13_puzzle"]
 [ext_resource type="PackedScene" uid="uid://cplayer_health_hud" path="res://scenes/ui/player_health_hud.tscn" id="3_hud"]
 [ext_resource type="PackedScene" uid="uid://croom_progress_hud" path="res://scenes/ui/room_progress_hud.tscn" id="11_room_hud"]
 [ext_resource type="Script" path="res://scripts/rendering/iso_camera_rig.gd" id="2_rig"]
@@ -153,6 +155,13 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 6)
 player_path = NodePath("../Player")
 
 [node name="RoomProgressHud" parent="." instance=ExtResource("11_room_hud")]
+
+[node name="PuzzleAccessGate" parent="." instance=ExtResource("12_gate")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, -1)
+room_progress_path = NodePath("../RoomProgressHud")
+
+[node name="PuzzleRoom" parent="." instance=ExtResource("13_puzzle")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, -2)
 
 [node name="IsoCameraRig" type="Node3D" parent="."]
 script = ExtResource("2_rig")

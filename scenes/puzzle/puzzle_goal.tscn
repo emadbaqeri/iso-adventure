@@ -1,0 +1,27 @@
+[gd_scene load_steps=5 format=3 uid="uid://cpuzzle_goal"]
+
+[ext_resource type="Script" path="res://scripts/puzzle/puzzle_goal.gd" id="1_script"]
+[ext_resource type="Material" path="res://materials/lowpoly_accent.tres" id="2_mat"]
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_pedestal"]
+top_radius = 0.55
+bottom_radius = 0.7
+height = 0.9
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_goal"]
+radius = 0.75
+height = 1.2
+
+[node name="PuzzleGoal" type="Area3D"]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_script")
+
+[node name="PedestalMesh" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+mesh = SubResource("CylinderMesh_pedestal")
+surface_material_override/0 = ExtResource("2_mat")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("CylinderShape3D_goal")

@@ -23,6 +23,12 @@ xvfb-run -a "$GODOT" \
   -s res://tests/smoke/render_forward_smoke.gd \
   2>&1 | tee "$LOG"
 
+if grep -qE 'surface_override_materials\.size\(\) = 0|set_surface_override_material \(mesh_instance_3d' "$LOG"; then
+  echo "render_forward_smoke: MeshInstance3D surface override error in log" >&2
+  grep -E 'surface_override_materials\.size\(\) = 0|set_surface_override_material \(mesh_instance_3d' "$LOG" >&2 || true
+  exit 1
+fi
+
 if grep -qE '^(ERROR:|SCRIPT ERROR:|USER ERROR:)' "$LOG"; then
   echo "render_forward_smoke: ERROR lines found in log" >&2
   grep -E '^(ERROR:|SCRIPT ERROR:|USER ERROR:)' "$LOG" >&2 || true

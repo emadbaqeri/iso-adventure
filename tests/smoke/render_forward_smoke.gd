@@ -21,7 +21,13 @@ func _boot() -> void:
 		return
 	var scene := packed.instantiate()
 	get_root().add_child(scene)
+	var player := scene.get_node_or_null("Player") as PlayerController
+	if player != null:
+		player.begin_melee_swing()
+		player.set_melee_swing_progress(0.65)
 	for _i: int in range(WARMUP_FRAMES + RUN_FRAMES):
 		await process_frame
+	if player != null:
+		player.end_attack_visual()
 	print("render_forward_smoke: OK")
 	quit(0)

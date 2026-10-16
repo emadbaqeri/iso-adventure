@@ -3,6 +3,20 @@ extends GdUnitTestSuite
 const PLAYER_SCENE := "res://scenes/player/player.tscn"
 
 
+func test_trail_uses_material_override_not_surface_zero() -> void:
+	var runner := scene_runner(PLAYER_SCENE)
+	await _wait(runner, 2)
+	var trail := runner.scene().get_node(
+		"AttackPivot/SwordRig/SwingPivot/Trail"
+	) as MeshInstance3D
+	assert_object(trail.material_override).is_not_null()
+	rig_begin(runner.scene())
+	rig_set_progress(runner.scene(), 0.5)
+	await _wait(runner, 2)
+	assert_object(trail.mesh).is_not_null()
+	assert_object(trail.material_override).is_not_null()
+
+
 func test_sword_rig_has_wide_swing_arc() -> void:
 	var runner := scene_runner(PLAYER_SCENE)
 	await _wait(runner, 2)

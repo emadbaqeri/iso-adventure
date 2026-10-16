@@ -88,7 +88,7 @@ func _setup_trail_material() -> void:
 	_trail_material.albedo_color = Color(0.55, 0.72, 0.95, 0.42)
 	_trail_material.emission_enabled = true
 	_trail_material.emission = Color(0.35, 0.55, 0.85) * 0.25
-	_trail.set_surface_override_material(0, _trail_material)
+	_trail.material_override = _trail_material
 	_trail.visible = false
 
 

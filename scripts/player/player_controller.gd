@@ -98,7 +98,11 @@ func snap_to_facing(direction: Vector3) -> void:
 
 
 func can_attack() -> bool:
-	return _cooldown_left <= 0.0 and _health.is_alive()
+	return (
+		_cooldown_left <= 0.0
+		and _health.is_alive()
+		and _sword_rig.is_ready_for_attack()
+	)
 
 
 func try_begin_attack() -> bool:
@@ -126,25 +130,25 @@ func set_attack_hitbox_active(active: bool) -> void:
 		_attack_hitbox.deactivate()
 
 
-func begin_attack_visual() -> void:
-	pass
+func get_melee_attack_duration() -> float:
+	return _sword_rig.get_attack_total_duration()
 
 
-func end_attack_visual() -> void:
-	_sword_rig.return_to_rest()
+func begin_melee_attack() -> void:
+	_sword_rig.begin_attack_combo(get_facing_yaw())
+
+
+func advance_melee_attack(delta: float) -> bool:
+	return _sword_rig.advance_attack_combo(delta)
+
+
+func is_melee_strike_active() -> bool:
+	return _sword_rig.is_strike_phase()
+
+
+func cancel_melee_attack() -> void:
+	_sword_rig.cancel_attack_combo()
 	set_attack_hitbox_active(false)
-
-
-func begin_melee_swing() -> void:
-	_sword_rig.begin_swing(get_facing_yaw())
-
-
-func set_melee_swing_progress(progress: float) -> void:
-	_sword_rig.set_swing_progress(progress)
-
-
-func end_melee_swing() -> void:
-	_sword_rig.return_to_rest()
 
 
 func apply_hit_knockback(from_world: Vector3) -> void:

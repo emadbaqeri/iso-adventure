@@ -1,17 +1,23 @@
 class_name PlayerSwordRig
 extends Node3D
 
-enum FollowMode { FLOAT, SWING, RETURN }
+enum FollowMode { FLOAT, ATTACK, RETURN }
 
 const SWING_ARC_DEGREES := 140.0
 const SWING_START_DEG := -70.0
 const SWING_END_DEG := 70.0
 const REST_SIDE_YAW_DEG := -62.0
-const REST_BLADE_PITCH_DEG := -52.0
+## Blade extends along local -Z; +90° X points tip at the sky.
+const REST_BLADE_PITCH_DEG := 90.0
+const WIND_BACK_YAW_DEG := -108.0
 const BLADE_REACH := 0.92
 const TRAIL_INNER := 0.52
 const TRAIL_OUTER := 1.02
-const GLIDE_PORTION := 0.14
+
+@export_group("Attack Phases")
+@export var wind_up_duration: float = 0.12
+@export var strike_duration: float = 0.12
+@export var recovery_duration: float = 0.2
 
 @export_group("Hover Follow")
 @export var spring_stiffness: float = 42.0
@@ -42,7 +48,9 @@ var _trail_material: StandardMaterial3D
 var _trail_from_angle: float = 0.0
 var _trail_to_angle: float = 0.0
 var _swing_facing_yaw: float = 0.0
-var _glide_start_position: Vector3 = Vector3.ZERO
+var _attack_time: float = 0.0
+var _combo_active: bool = false
+var _attack_start_hover: Vector3 = Vector3.ZERO
 
 
 func _ready() -> void:
@@ -60,67 +68,145 @@ func _physics_process(delta: float) -> void:
 	_time += delta
 	if _player == null or not is_instance_valid(_player):
 		return
+	if _combo_active:
+		return
 	match _mode:
 		FollowMode.FLOAT, FollowMode.RETURN:
 			_update_hover_follow(delta)
-		FollowMode.SWING:
-			pass
 
 
 func get_hitbox() -> HitboxComponent:
 	return _hitbox as HitboxComponent
 
 
-func return_to_rest(animate_trail_fade: bool = true) -> void:
-	_mode = FollowMode.RETURN
-	_trail_from_angle = _swing_pivot.rotation.y
-	if animate_trail_fade:
-		_fade_trail_out()
-	else:
-		_trail.visible = false
+func get_attack_total_duration() -> float:
+	return wind_up_duration + strike_duration + recovery_duration
 
 
-func begin_swing(facing_yaw: float) -> void:
-	_mode = FollowMode.SWING
-	_swing_facing_yaw = facing_yaw
-	_glide_start_position = global_position
-	_trail_from_angle = deg_to_rad(SWING_START_DEG)
-	_trail_to_angle = _trail_from_angle
-	_trail.visible = true
-	if _trail_material != null:
-		_trail_material.albedo_color.a = 0.42
-	set_swing_progress(0.0)
+func get_attack_phase_name() -> StringName:
+	if not _combo_active:
+		return &"idle"
+	if _attack_time < wind_up_duration:
+		return &"wind_up"
+	if _attack_time < wind_up_duration + strike_duration:
+		return &"strike"
+	return &"recovery"
 
 
-func set_swing_progress(progress: float) -> void:
-	if _mode != FollowMode.SWING:
-		return
-	var t := clampf(progress, 0.0, 1.0)
-	var swing_center := _swing_center_world()
-	if t <= GLIDE_PORTION:
-		var glide_t := t / GLIDE_PORTION
-		global_position = _glide_start_position.lerp(swing_center, glide_t)
-		_sword_root.rotation.x = deg_to_rad(
-			lerpf(REST_BLADE_PITCH_DEG, 0.0, glide_t)
-		)
-	else:
-		global_position = swing_center
-		_sword_root.rotation.x = 0.0
-	var arc_t := clampf((t - GLIDE_PORTION) / (1.0 - GLIDE_PORTION), 0.0, 1.0)
-	var angle := deg_to_rad(lerpf(SWING_START_DEG, SWING_END_DEG, arc_t))
-	_swing_pivot.rotation.y = angle
-	global_rotation = Vector3(0.0, _swing_facing_yaw, 0.0)
-	_trail_to_angle = angle
-	_rebuild_trail_mesh()
-	_align_hitbox_to_sword()
+func is_ready_for_attack() -> bool:
+	return not _combo_active and _mode == FollowMode.FLOAT
+
+
+func is_strike_phase() -> bool:
+	return _combo_active and get_attack_phase_name() == &"strike"
+
+
+func is_top_level_floater() -> bool:
+	return top_level
 
 
 func swing_arc_degrees() -> float:
 	return SWING_ARC_DEGREES
 
 
-func is_top_level_floater() -> bool:
-	return top_level
+func get_blade_tip_direction_world() -> Vector3:
+	var tip := _blade.global_position - _hilt.global_position
+	tip.y = 0.0
+	if tip.length_squared() < 1e-8:
+		tip = Vector3(0.0, 1.0, 0.0)
+	return tip.normalized()
+
+
+func get_blade_tip_up_alignment() -> float:
+	var tip_dir := (_blade.global_position - _hilt.global_position).normalized()
+	return tip_dir.dot(Vector3.UP)
+
+
+func begin_attack_combo(facing_yaw: float) -> void:
+	_combo_active = true
+	_attack_time = 0.0
+	_mode = FollowMode.ATTACK
+	_swing_facing_yaw = facing_yaw
+	_attack_start_hover = global_position
+	_trail.visible = false
+	_trail.mesh = null
+	_trail_from_angle = deg_to_rad(SWING_START_DEG)
+	_trail_to_angle = _trail_from_angle
+	_apply_attack_sample(0.0)
+
+
+func advance_attack_combo(delta: float) -> bool:
+	if not _combo_active:
+		return false
+	_attack_time += delta
+	var total := get_attack_total_duration()
+	if _attack_time >= total:
+		_finish_attack_combo()
+		return false
+	_apply_attack_sample(_attack_time)
+	return true
+
+
+func cancel_attack_combo() -> void:
+	if not _combo_active:
+		return
+	_finish_attack_combo()
+
+
+func _finish_attack_combo() -> void:
+	_combo_active = false
+	_mode = FollowMode.RETURN
+	_fade_trail_out()
+	_apply_rest_pose()
+
+
+func _apply_attack_sample(elapsed: float) -> void:
+	global_rotation = Vector3(0.0, _swing_facing_yaw, 0.0)
+	if elapsed < wind_up_duration:
+		_apply_wind_up(elapsed / wind_up_duration)
+	elif elapsed < wind_up_duration + strike_duration:
+		_apply_strike(
+			(elapsed - wind_up_duration) / strike_duration
+		)
+	else:
+		var recovery_elapsed := elapsed - wind_up_duration - strike_duration
+		_apply_recovery(recovery_elapsed / recovery_duration)
+
+
+func _apply_wind_up(t: float) -> void:
+	var eased := _ease_out_quad(clampf(t, 0.0, 1.0))
+	var wind_back := _wind_back_world()
+	global_position = _attack_start_hover.lerp(wind_back, eased)
+	var yaw := lerpf(REST_SIDE_YAW_DEG, WIND_BACK_YAW_DEG, eased)
+	_swing_pivot.rotation = Vector3(0.0, deg_to_rad(yaw), 0.0)
+	_sword_root.rotation.x = deg_to_rad(REST_BLADE_PITCH_DEG)
+	_trail.visible = false
+
+
+func _apply_strike(t: float) -> void:
+	var eased := _ease_in_cubic(clampf(t, 0.0, 1.0))
+	global_position = _swing_center_world()
+	var angle := deg_to_rad(lerpf(SWING_START_DEG, SWING_END_DEG, eased))
+	_swing_pivot.rotation.y = angle
+	_sword_root.rotation.x = deg_to_rad(lerpf(REST_BLADE_PITCH_DEG, 0.0, minf(eased * 1.35, 1.0)))
+	_trail.visible = true
+	if _trail_material != null:
+		_trail_material.albedo_color.a = 0.42
+	_trail_to_angle = angle
+	_rebuild_trail_mesh()
+	_align_hitbox_to_sword()
+
+
+func _apply_recovery(t: float) -> void:
+	var eased := _ease_in_out_quad(clampf(t, 0.0, 1.0))
+	var anchor := _hover_anchor_world()
+	global_position = _swing_center_world().lerp(anchor, eased)
+	_mode = FollowMode.RETURN
+	var yaw := lerpf(SWING_END_DEG, REST_SIDE_YAW_DEG, eased)
+	_swing_pivot.rotation = Vector3(0.0, deg_to_rad(yaw), 0.0)
+	_sword_root.rotation.x = deg_to_rad(lerpf(0.0, REST_BLADE_PITCH_DEG, eased))
+	if eased > 0.85:
+		_mode = FollowMode.RETURN
 
 
 func _update_hover_follow(delta: float) -> void:
@@ -156,6 +242,13 @@ func _hover_anchor_world() -> Vector3:
 	return _player.global_position + offset + Vector3(0.0, bob, 0.0)
 
 
+func _wind_back_world() -> Vector3:
+	if _player == null:
+		return global_position
+	var basis := _player.global_transform.basis
+	return _player.global_position + basis.x * -0.32 + Vector3.UP * 0.86 + basis.z * 0.22
+
+
 func _hover_rotation_basis() -> Basis:
 	if _player == null:
 		return Basis.IDENTITY
@@ -172,7 +265,7 @@ func _swing_center_world() -> Vector3:
 
 
 func _apply_rest_pose() -> void:
-	if _mode == FollowMode.SWING:
+	if _combo_active:
 		return
 	var side_sway := deg_to_rad(sin(_time * bob_speed * 1.1) * sway_degrees * 0.6)
 	_swing_pivot.rotation = Vector3(0.0, deg_to_rad(REST_SIDE_YAW_DEG) + side_sway, 0.0)
@@ -252,6 +345,8 @@ func _fade_trail_out() -> void:
 	tween.tween_callback(func() -> void:
 		_trail.visible = false
 		_trail.mesh = null
+		_trail_from_angle = 0.0
+		_trail_to_angle = 0.0
 	)
 
 
@@ -261,3 +356,17 @@ func _set_trail_alpha(alpha: float) -> void:
 	var c := _trail_material.albedo_color
 	c.a = alpha
 	_trail_material.albedo_color = c
+
+
+static func _ease_out_quad(t: float) -> float:
+	return 1.0 - (1.0 - t) * (1.0 - t)
+
+
+static func _ease_in_cubic(t: float) -> float:
+	return t * t * t
+
+
+static func _ease_in_out_quad(t: float) -> float:
+	if t < 0.5:
+		return 2.0 * t * t
+	return 1.0 - pow(-2.0 * t + 2.0, 2.0) / 2.0

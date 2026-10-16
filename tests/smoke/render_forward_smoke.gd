@@ -3,7 +3,8 @@ extends SceneTree
 ## Boot render_test under Forward+ for a few frames; CI greps stderr for ERROR lines.
 
 const WARMUP_FRAMES := 20
-const RUN_FRAMES := 15
+const RUN_FRAMES := 30
+const PHYSICS_STEP := 1.0 / 60.0
 
 
 func _initialize() -> void:
@@ -23,11 +24,12 @@ func _boot() -> void:
 	get_root().add_child(scene)
 	var player := scene.get_node_or_null("Player") as PlayerController
 	if player != null:
-		player.begin_melee_swing()
-		player.set_melee_swing_progress(0.65)
+		player.begin_melee_attack()
 	for _i: int in range(WARMUP_FRAMES + RUN_FRAMES):
+		if player != null:
+			player.advance_melee_attack(PHYSICS_STEP)
 		await process_frame
 	if player != null:
-		player.end_attack_visual()
+		player.cancel_melee_attack()
 	print("render_forward_smoke: OK")
 	quit(0)

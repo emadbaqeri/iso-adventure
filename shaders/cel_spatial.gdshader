@@ -1,5 +1,5 @@
 shader_type spatial;
-render_mode cull_back, diffuse_lambert;
+render_mode cull_back, diffuse_lambert, specular_disabled;
 
 uniform vec4 albedo_color : source_color = vec4(0.24, 0.31, 0.44, 1.0);
 uniform sampler2D albedo_tex : source_color, filter_nearest, repeat_disable, hint_default_white;

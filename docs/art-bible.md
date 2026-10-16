@@ -13,12 +13,16 @@ Low-res 3D rendered into a **SubViewport** at **640×360**, displayed through `P
 | Cel surface | `shaders/cel_spatial.gdshader` — hue-shifted hard bands, optional rim |
 | Mood | `RenderMoodResource` + `RenderMoodController` (`resources/moods/`) |
 | Low-res 3D | `SubViewport` 640×360 inside `scenes/render_test.tscn` |
-| Outline + palette | `shaders/pixel_post.gdshader` — depth + normal edges (top-face boost), dual-tone outline |
+| Outline + palette | `shaders/pixel_viewport_composite.gdshader` on `SubViewportContainer` (1-texel color edges, dual-tone outline). `shaders/pixel_post.gdshader` kept for Forward+ experiments. |
 | Palette quantize | Optional; `quantize_palette` on `PixelRenderRoot` |
 
 **Lighting & depth:** warm **key** (`DirectionalLight3D` sun) + cool **ambient**, cool **rim** fill, **SSAO** for contact read, **distance fog** tinted per mood, **hard** sun shadows (`shadow_filter = none`). Cel bands use separate shadow/mid/highlight tints (not only darker albedo).
 
-**Test scene:** `scenes/render_test.tscn` (main scene). Press **M** to cycle moods (`warm_day` → `cool_dungeon`).
+**Viewport upscale:** `SubViewportContainer.stretch = true` with `stretch_shrink = integer_scale` (nearest filter). Default window **1280×720** → 2× upscale fills the window.
+
+**Test scene:** `scenes/render_test.tscn` (main scene). Press **M** to cycle moods (`warm_day` → `cool_dungeon`). Reference captures: `docs/screenshots/warm_day.png`, `cool_dungeon.png`, `motion_*.png`.
+
+**Renderer:** Project pins **Forward+** (`rendering/renderer/rendering_method=forward_plus`) for macOS Metal. Composite post runs on the container material (works on Compatibility/OpenGL too).
 
 ## Shaders
 

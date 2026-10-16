@@ -1,6 +1,6 @@
 [gd_resource type="ShaderMaterial" load_steps=3 format=3]
 
-[ext_resource type="Shader" path="res://shaders/pixel_post.gdshader" id="1_shader"]
+[ext_resource type="Shader" path="res://shaders/pixel_post_compat.gdshader" id="1_shader"]
 [ext_resource type="Texture2D" path="res://assets/palette/starter_palette.png" id="2_palette"]
 
 [resource]

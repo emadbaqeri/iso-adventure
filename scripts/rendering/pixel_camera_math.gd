@@ -18,8 +18,8 @@ static func snap_on_camera_plane(
 	var local_pos: Vector3 = inv_basis * world_position
 
 	var snapped_local := Vector3(
-		floor(local_pos.x / pixel_world_size) * pixel_world_size,
-		floor(local_pos.y / pixel_world_size) * pixel_world_size,
+		round(local_pos.x / pixel_world_size) * pixel_world_size,
+		round(local_pos.y / pixel_world_size) * pixel_world_size,
 		local_pos.z,
 	)
 

@@ -10,6 +10,7 @@ var _move_axis: Vector3 = Vector3.RIGHT
 
 
 func _ready() -> void:
+	process_physics_priority = -10
 	_origin = global_position
 	var rig := get_node_or_null(camera_rig_path) as PixelCameraRig
 	if rig != null:

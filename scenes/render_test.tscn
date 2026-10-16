@@ -6,12 +6,11 @@
 [ext_resource type="Material" path="res://materials/cel_default.tres" id="4_cel"]
 [ext_resource type="Material" path="res://materials/cel_accent.tres" id="5_accent"]
 [ext_resource type="Material" path="res://materials/cel_warm.tres" id="6_warm"]
-[ext_resource type="Material" path="res://materials/pixel_post.tres" id="7_post"]
 [ext_resource type="Texture2D" path="res://assets/palette/starter_palette.png" id="8_palette"]
-[ext_resource type="Script" path="res://scripts/rendering/pixel_post_quad.gd" id="9_quad"]
 [ext_resource type="Script" path="res://scripts/rendering/render_mood_controller.gd" id="10_mood"]
 [ext_resource type="Resource" path="res://resources/moods/warm_day.tres" id="11_warm"]
 [ext_resource type="Resource" path="res://resources/moods/cool_dungeon.tres" id="12_dungeon"]
+[ext_resource type="Material" path="res://materials/pixel_viewport_composite.tres" id="13_composite"]
 
 [sub_resource type="Environment" id="Environment_render"]
 background_mode = 1
@@ -21,15 +20,15 @@ ambient_light_color = Color(0.48, 0.58, 0.78, 1)
 ambient_light_energy = 0.42
 fog_enabled = true
 fog_light_color = Color(0.62, 0.74, 0.92, 1)
-fog_density = 0.012
-fog_aerial_perspective = 0.42
+fog_density = 0.008
+fog_aerial_perspective = 0.28
 ssao_enabled = true
-ssao_intensity = 0.5
+ssao_intensity = 0.35
 ssao_radius = 0.35
 ssao_power = 1.4
 
 [sub_resource type="BoxMesh" id="BoxMesh_floor"]
-size = Vector3(24, 0.4, 24)
+size = Vector3(16, 0.4, 16)
 
 [sub_resource type="BoxMesh" id="BoxMesh_cube"]
 size = Vector3(1.6, 1.6, 1.6)
@@ -48,11 +47,13 @@ script = ExtResource("1_root")
 render_size = Vector2i(640, 360)
 quantize_palette = false
 palette_texture = ExtResource("8_palette")
+composite_material = ExtResource("13_composite")
 mood_controller_path = NodePath("SubViewportContainer/SubViewport/MoodController")
 
 [node name="SubViewportContainer" type="SubViewportContainer" parent="."]
 layout_mode = 0
 texture_filter = 0
+material = ExtResource("13_composite")
 
 [node name="SubViewport" type="SubViewport" parent="SubViewportContainer"]
 handle_input_locally = false
@@ -83,7 +84,7 @@ world_environment_path = NodePath("../WorldEnvironment")
 key_light_path = NodePath("../Sun")
 rim_light_path = NodePath("../RimLight")
 cel_material_paths = Array[NodePath]([NodePath("../World/Floor"), NodePath("../World/CubeA"), NodePath("../World/CubeB"), NodePath("../World/PillarA"), NodePath("../World/PillarB"), NodePath("../World/MovingCube")])
-post_material_path = NodePath("../PixelCameraRig/PostProcessQuad")
+composite_material_path = NodePath("../../SubViewportContainer")
 mood_presets = Array[ExtResource("11_warm")]([ExtResource("11_warm"), ExtResource("12_dungeon")])
 
 [node name="World" type="Node3D" parent="SubViewportContainer/SubViewport"]
@@ -104,12 +105,12 @@ mesh = SubResource("BoxMesh_cube")
 surface_material_override/0 = ExtResource("5_accent")
 
 [node name="PillarA" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/World"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 2, -4)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 2, -3)
 mesh = SubResource("BoxMesh_pillar")
 surface_material_override/0 = ExtResource("6_warm")
 
 [node name="PillarB" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/World"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 2, 3)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 2, 3)
 mesh = SubResource("BoxMesh_pillar")
 surface_material_override/0 = ExtResource("4_cel")
 
@@ -120,17 +121,12 @@ surface_material_override/0 = ExtResource("5_accent")
 script = ExtResource("3_mover")
 
 [node name="PixelCameraRig" type="Node3D" parent="SubViewportContainer/SubViewport"]
-transform = Transform3D(0.707107, -0.241845, 0.664463, 0, 0.939693, 0.34202, -0.707107, -0.241845, 0.664463, 0, 0, 0)
+transform = Transform3D(0.707107, -0.408248, 0.57735, 0, 0.816497, 0.57735, -0.707107, -0.408248, 0.57735, 0, 0, 0)
 script = ExtResource("2_rig")
 follow_target_path = NodePath("../World/MovingCube")
-follow_offset = Vector3(0, 2, 0)
+follow_offset = Vector3(0, 4, 2)
 
 [node name="Camera3D" type="Camera3D" parent="SubViewportContainer/SubViewport/PixelCameraRig"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 18)
 projection = 1
-size = 14.0
+size = 11.0
 current = true
-
-[node name="PostProcessQuad" type="MeshInstance3D" parent="SubViewportContainer/SubViewport/PixelCameraRig"]
-material_override = ExtResource("7_post")
-script = ExtResource("9_quad")

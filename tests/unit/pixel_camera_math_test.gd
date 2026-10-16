@@ -42,6 +42,7 @@ func test_snap_on_camera_plane_preserves_depth_axis() -> void:
 	var upp := 0.2
 	var result := PixelCameraMath.snap_on_camera_plane(basis, world, upp)
 	var local_after: Vector3 = basis.inverse() * result["snapped_world"]
-	assert_float(fmod(local_after.x, upp)).is_equal_approx(0.0, 0.0001)
-	assert_float(fmod(local_after.y, upp)).is_equal_approx(0.0, 0.0001)
+	var local_before: Vector3 = basis.inverse() * world
+	assert_float(local_after.x).is_equal_approx(round(local_before.x / upp) * upp, 0.0001)
+	assert_float(local_after.y).is_equal_approx(round(local_before.y / upp) * upp, 0.0001)
 	assert_float(local_after.z).is_equal_approx((basis.inverse() * world).z, 0.0001)

@@ -25,3 +25,4 @@ reports/
 
 # Logs
 *.log
+.ci/

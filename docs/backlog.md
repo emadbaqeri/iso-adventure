@@ -7,8 +7,8 @@
 
 ## V1 prototype (*Tomb of the First God* slice)
 
-- [ ] Player isometric movement
-- [ ] Camera follow (iso rig)
+- [x] Player isometric movement
+- [x] Camera follow (iso rig)
 - [ ] One temple dungeon layout (puzzle room: switches, push blocks, door)
 - [ ] One melee enemy type
 - [ ] Warrior placeholder class + abilities stub
@@ -25,4 +25,5 @@
 
 ## Later
 
+- [ ] Shadow jitter on moving objects (minor, accepted for prototype)
 - [ ] Additional regions, factions, endgame when all temples fail (TBD with Emad)

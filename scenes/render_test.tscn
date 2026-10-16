@@ -57,12 +57,12 @@ transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0
 light_color = Color(1, 0.94, 0.82, 1)
 light_energy = 1.25
 shadow_enabled = true
-directional_shadow_mode = 1
-directional_shadow_max_distance = 48.0
+directional_shadow_mode = 0
+directional_shadow_max_distance = 24.0
 shadow_bias = 0.15
 shadow_normal_bias = 1.8
 directional_shadow_pancake_size = 20.0
-shadow_filter = 3
+shadow_filter = 4
 shadow_blur = 1.2
 
 [node name="MoodController" type="Node" parent="."]
@@ -100,6 +100,7 @@ surface_material_override/0 = ExtResource("5_default")
 
 [node name="MovingCube" type="MeshInstance3D" parent="World"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+physics_interpolation_mode = 1
 mesh = SubResource("BoxMesh_cube")
 surface_material_override/0 = ExtResource("6_accent")
 script = ExtResource("3_mover")

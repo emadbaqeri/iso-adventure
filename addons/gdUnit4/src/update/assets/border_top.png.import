@@ -3,11 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c7m6i1lco4uyk"
-valid=false
+path="res://.godot/imported/border_top.png-c47cbebdb755144731c6ae309e18bbaa.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://addons/gdUnit4/src/update/assets/border_top.png"
+dest_files=["res://.godot/imported/border_top.png-c47cbebdb755144731c6ae309e18bbaa.ctex"]
 
 [params]
 

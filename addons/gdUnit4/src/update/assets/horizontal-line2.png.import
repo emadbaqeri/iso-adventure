@@ -3,11 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cvtcmlthphs47"
-valid=false
+path="res://.godot/imported/horizontal-line2.png-92618e6ee5cc9002847547a8c9deadbc.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://addons/gdUnit4/src/update/assets/horizontal-line2.png"
+dest_files=["res://.godot/imported/horizontal-line2.png-92618e6ee5cc9002847547a8c9deadbc.ctex"]
 
 [params]
 

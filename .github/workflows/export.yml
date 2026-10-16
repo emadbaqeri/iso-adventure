@@ -1,0 +1,84 @@
+name: Export
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GODOT_VERSION: 4.7.2-stable
+
+jobs:
+  export:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Cache Godot and export templates
+        uses: actions/cache@v4
+        with:
+          path: |
+            .ci/godot
+            .ci/templates
+          key: godot-export-${{ env.GODOT_VERSION }}-linux-x86_64
+
+      - name: Install Godot and export templates
+        run: |
+          mkdir -p .ci/godot .ci/templates
+          if [ ! -x .ci/godot/Godot ]; then
+            curl -fsSL -o .ci/godot.zip \
+              "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+            unzip -q .ci/godot.zip -d .ci/godot
+            mv .ci/godot/Godot_v${GODOT_VERSION}_linux.x86_64 .ci/godot/Godot
+            chmod +x .ci/godot/Godot
+          fi
+          TEMPLATE_DIR="$HOME/.local/share/godot/export_templates/4.7.2.stable"
+          if [ ! -f "$TEMPLATE_DIR/linux_debug.x86_64" ]; then
+            curl -fsSL -o .ci/templates.tpz \
+              "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_export_templates.tpz"
+            unzip -q .ci/templates.tpz -d .ci/templates
+            mkdir -p "$TEMPLATE_DIR"
+            cp -r .ci/templates/templates/* "$TEMPLATE_DIR/"
+          fi
+          .ci/godot/Godot --version
+
+      - name: Import project
+        run: .ci/godot/Godot --headless --path . --import
+
+      - name: Prepare export directories
+        run: mkdir -p build/linux build/windows build/macos
+
+      - name: Export Linux
+        run: .ci/godot/Godot --headless --display-driver headless --audio-driver Dummy --path . --export-release "Linux" build/linux/iso-adventure.x86_64
+
+      - name: Export Windows
+        run: .ci/godot/Godot --headless --display-driver headless --audio-driver Dummy --path . --export-release "Windows Desktop" build/windows/iso-adventure.exe
+
+      - name: Export macOS (unsigned)
+        run: .ci/godot/Godot --headless --display-driver headless --audio-driver Dummy --path . --export-release "macOS" build/macos/iso-adventure.zip
+
+      - name: Upload Linux build
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-desktop
+          path: build/linux/
+
+      - name: Upload Windows build
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-desktop
+          path: build/windows/
+
+      - name: Upload macOS build
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-desktop
+          path: build/macos/

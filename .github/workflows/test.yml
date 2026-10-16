@@ -1,0 +1,54 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  GODOT_VERSION: 4.7.2-stable
+  GODOT_STATUS: stable
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Cache Godot editor
+        uses: actions/cache@v4
+        with:
+          path: .ci/godot
+          key: godot-${{ env.GODOT_VERSION }}-linux-x86_64
+
+      - name: Install Godot
+        run: |
+          mkdir -p .ci
+          if [ ! -x .ci/godot/Godot ]; then
+            curl -fsSL -o .ci/godot.zip \
+              "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+            unzip -q .ci/godot.zip -d .ci/godot
+            mv .ci/godot/Godot_v${GODOT_VERSION}_linux.x86_64 .ci/godot/Godot
+            chmod +x .ci/godot/Godot
+          fi
+          .ci/godot/Godot --version
+
+      - name: Import project (compile scripts & assets)
+        run: .ci/godot/Godot --headless --path . --import
+
+      - name: Run gdUnit4 unit tests
+        env:
+          DISPLAY: ":99"
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb
+          xvfb-run -a ./addons/gdUnit4/runtest.sh --godot_binary .ci/godot/Godot -a res://tests/unit
+
+      - name: Run scene smoke test
+        run: .ci/godot/Godot --headless --path . -s res://tests/smoke/scene_smoke_runner.gd

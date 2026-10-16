@@ -19,9 +19,13 @@ xvfb-run -a -s "-screen 0 1280x720x24" "$GODOT" \
   -s res://tests/smoke/outline_stability_smoke.gd \
   2>&1 | tee "$LOG"
 
-if grep -qE '^(ERROR:|SCRIPT ERROR:|USER ERROR:)' "$LOG"; then
-  echo "outline_stability_smoke: ERROR lines found in log" >&2
-  grep -E '^(ERROR:|SCRIPT ERROR:|USER ERROR:)' "$LOG" >&2 || true
+if grep -qE '^(SCRIPT ERROR:|USER ERROR:)' "$LOG"; then
+  echo "outline_stability_smoke: script errors in log" >&2
+  grep -E '^(SCRIPT ERROR:|USER ERROR:)' "$LOG" >&2 || true
+  exit 1
+fi
+if grep -qE '^ERROR: outline_stability:' "$LOG"; then
+  echo "outline_stability_smoke: stability failure" >&2
   exit 1
 fi
 

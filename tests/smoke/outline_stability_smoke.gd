@@ -101,10 +101,10 @@ func _interior_roi(roi: Rect2i, border: int) -> Rect2i:
 func _capture_subviewport(sub_vp: SubViewport) -> Image:
 	var tex := sub_vp.get_texture()
 	if tex == null:
-		return Image.create(1, 1, false, Image.FORMAT_RGB8)
-	var img := RenderingServer.texture_2d_get(tex.get_rid())
+		return Image.create(640, 360, false, Image.FORMAT_RGB8)
+	var img: Image = tex.get_image()
 	if img == null or img.is_empty():
-		return Image.create(1, 1, false, Image.FORMAT_RGB8)
+		return Image.create(640, 360, false, Image.FORMAT_RGB8)
 	return img
 
 

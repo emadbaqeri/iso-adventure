@@ -55,6 +55,36 @@ Procedural **8×4** swatch grid (256×128 PNG). Each mesh face UV-snaps to the *
 
 Shipped copy: `assets/characters/warden/palette.png` (regenerated with `blender -b -P tools/blender/build_warden.py`).
 
+### Environment palette (rows 2–3, shared `tools/blender/palette.png`)
+
+Same **8×4** grid and UV rules as the warden. Row **2** is stone, wood, ember, snow, and ice; row **3** is pine, bush, dead wood, grass, heather, rock, and snow patch. Godot material: `materials/lowpoly_palette_env.tres` → `assets/env/palette.png`.
+
+| Swatch (col, row) | Role |
+|-------------------|------|
+| (0,2)–(3,2) | Stone light / mid / dark / moss |
+| (4,2) | Weathered wood |
+| (5,2) | Brazier ember |
+| (6,2)–(7,2) | Snow / ice highlight |
+| (0,3)–(1,3) | Pine / pine shadow |
+| (2,3)–(3,3) | Bush / dead wood |
+| (4,3)–(5,3) | Grass / heather |
+| (6,3)–(7,3) | Rock / snow patch |
+
+### Environment kit (2 m modular grid)
+
+Procedural Blender build: `tools/blender/build_env_kit.py` → `assets/env/*.glb` (1 unit = 1 m). Wrapper scenes: `scenes/env/`. Room dressing: `scripts/levels/room_env_dressing.gd` on `test_room` / `puzzle_room`.
+
+| Piece | GLB |
+|-------|-----|
+| Floor tiles (2 variants) | `stone_floor_tile_a.glb`, `stone_floor_tile_b.glb` |
+| Walls straight / corner / broken | `stone_wall_straight.glb`, `stone_wall_corner.glb`, `stone_wall_broken.glb` |
+| Pillar, rune stone, crate, brazier | `stone_pillar.glb`, `rune_stone.glb`, `crate.glb`, `brazier.glb` |
+| Pines ×3, dead tree | `pine_tree_a/b/c.glb`, `dead_tree.glb` |
+| Bushes ×2, tufts | `bush_a/b.glb`, `grass_tuft.glb`, `heather_tuft.glb` |
+| Rocks ×3, snow patch | `rock_a/b/c.glb`, `snow_patch.glb` |
+
+Regenerate: `blender -b -P tools/blender/build_env_kit.py` then `python3 tools/godot/generate_env_scenes.py` if collision sizes change.
+
 ## Pipeline
 
 1. Model in Blender at **fixed world scale**, export **glTF**.

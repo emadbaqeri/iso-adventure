@@ -1,0 +1,18 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/env/rock_a.glb" id="1_glb"]
+[ext_resource type="Script" path="res://scripts/env/env_palette_visual.gd" id="2_script"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_col"]
+size = Vector3(0.9, 0.5, 0.7)
+
+[node name="rock_a" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+script = ExtResource("2_script")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
+shape = SubResource("BoxShape3D_col")
+
+[node name="Visual" parent="." instance=ExtResource("1_glb")]

@@ -61,6 +61,18 @@ func _physics_process(delta: float) -> void:
 	_state_machine.physics_update(delta)
 
 
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("attack"):
+		request_attack()
+
+
+func get_safe_physics_delta() -> float:
+	var delta := get_physics_process_delta_time()
+	if delta <= 0.0:
+		return _sword_rig.get_default_physics_step()
+	return delta
+
+
 func get_input_vector() -> Vector2:
 	return PlayerMovementInput.read_move_vector()
 
@@ -99,35 +111,33 @@ func snap_to_facing(direction: Vector3) -> void:
 
 
 func can_attack() -> bool:
-	return (
-		_cooldown_left <= 0.0
-		and _health.is_alive()
-		and _sword_rig.is_ready_for_attack()
-	)
+	return _health.is_alive() and _sword_rig.can_accept_attack_input() and _cooldown_left <= 0.0
 
 
-func try_begin_attack() -> bool:
-	if not can_attack():
+func request_attack() -> bool:
+	if not _health.is_alive():
 		return false
 	if _state_machine.get_current_state_name() == &"Attack":
+		return try_interrupt_recovery_attack()
+	if _cooldown_left > 0.0:
+		return false
+	if not _sword_rig.can_accept_attack_input():
 		return false
 	_attack_input_buffered = false
 	_state_machine.change_state(&"Attack")
 	return true
 
 
-func try_buffer_attack_input() -> bool:
-	if _sword_rig.accepts_attack_buffer():
-		_attack_input_buffered = true
-		return true
-	return false
+func try_begin_attack() -> bool:
+	return request_attack()
 
 
-func consume_attack_buffer() -> bool:
-	if not _attack_input_buffered:
+func try_interrupt_recovery_attack() -> bool:
+	if not _sword_rig.is_in_recovery():
 		return false
 	_attack_input_buffered = false
-	return _health.is_alive()
+	_sword_rig.begin_attack_combo(get_facing_yaw())
+	return true
 
 
 func start_attack_cooldown() -> void:
@@ -152,6 +162,15 @@ func get_melee_attack_duration() -> float:
 
 func begin_melee_attack() -> void:
 	_sword_rig.begin_attack_combo(get_facing_yaw())
+	sync_melee_hitbox_from_strike()
+
+
+func is_melee_combo_active() -> bool:
+	return _sword_rig.is_combo_active()
+
+
+func sync_melee_hitbox_from_strike() -> void:
+	set_attack_hitbox_active(is_melee_strike_active())
 
 
 func advance_melee_attack(delta: float) -> bool:

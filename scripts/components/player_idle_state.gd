@@ -6,7 +6,7 @@ func physics_update(delta: float) -> void:
 	var controller := machine.owner_body as PlayerController
 	if controller == null:
 		return
-	if Input.is_action_just_pressed("attack") and controller.try_begin_attack():
+	if Input.is_action_just_pressed("attack") and controller.request_attack():
 		return
 	if controller.has_move_input():
 		machine.change_state(&"Move")

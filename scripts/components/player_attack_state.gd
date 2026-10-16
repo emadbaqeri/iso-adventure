@@ -17,7 +17,8 @@ func exit() -> void:
 	var controller := machine.owner_body as PlayerController
 	if controller == null:
 		return
-	controller.cancel_melee_attack()
+	if controller.is_melee_combo_active():
+		controller.cancel_melee_attack()
 	controller.set_attack_hitbox_active(false)
 
 
@@ -27,7 +28,10 @@ func physics_update(delta: float) -> void:
 		return
 
 	if Input.is_action_just_pressed("attack"):
-		controller.try_buffer_attack_input()
+		if controller.try_interrupt_recovery_attack():
+			_hitbox_enabled = controller.is_melee_strike_active()
+			controller.sync_melee_hitbox_from_strike()
+			return
 
 	var still_attacking := controller.advance_melee_attack(delta)
 	_update_hitbox(controller)
@@ -36,9 +40,6 @@ func physics_update(delta: float) -> void:
 	controller.physics_step(delta, facing, false, controller.attack_move_multiplier)
 
 	if not still_attacking:
-		if controller.consume_attack_buffer():
-			controller.begin_melee_attack()
-			return
 		controller.start_attack_cooldown()
 		if controller.has_move_input():
 			machine.change_state(&"Move")

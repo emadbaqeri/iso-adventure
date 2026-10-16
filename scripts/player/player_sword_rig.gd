@@ -14,10 +14,9 @@ const TRAIL_INNER := 0.52
 const TRAIL_OUTER := 1.02
 
 @export_group("Attack Phases")
-@export var wind_up_duration: float = 0.025
+@export var wind_up_duration: float = 0.0
 @export var strike_duration: float = 0.08
 @export var recovery_duration: float = 0.2
-@export_range(0.0, 1.0, 0.01) var recovery_buffer_threshold: float = 0.55
 
 @export_group("Hover Follow")
 @export var spring_stiffness: float = 42.0
@@ -50,6 +49,7 @@ var _trail_to_angle: float = 0.0
 var _swing_facing_yaw: float = 0.0
 var _attack_time: float = 0.0
 var _combo_active: bool = false
+var _strike_origin_position: Vector3 = Vector3.ZERO
 
 
 func _ready() -> void:
@@ -78,6 +78,13 @@ func get_hitbox() -> HitboxComponent:
 	return _hitbox as HitboxComponent
 
 
+func get_default_physics_step() -> float:
+	var hz := float(Engine.physics_ticks_per_second)
+	if hz <= 0.0:
+		return 1.0 / 60.0
+	return 1.0 / hz
+
+
 func get_attack_total_duration() -> float:
 	return wind_up_duration + strike_duration + recovery_duration
 
@@ -92,8 +99,18 @@ func get_attack_phase_name() -> StringName:
 	return &"recovery"
 
 
-func is_ready_for_attack() -> bool:
-	return not _combo_active and _mode == FollowMode.FLOAT
+func is_combo_active() -> bool:
+	return _combo_active
+
+
+func can_accept_attack_input() -> bool:
+	if not _combo_active:
+		return true
+	return is_in_recovery()
+
+
+func is_in_recovery() -> bool:
+	return _combo_active and get_attack_phase_name() == &"recovery"
 
 
 func is_strike_phase() -> bool:
@@ -105,15 +122,8 @@ func is_strike_phase() -> bool:
 	)
 
 
-func get_recovery_progress() -> float:
-	if not _combo_active or get_attack_phase_name() != &"recovery":
-		return 0.0
-	var elapsed := _attack_time - wind_up_duration - strike_duration
-	return clampf(elapsed / recovery_duration, 0.0, 1.0)
-
-
-func accepts_attack_buffer() -> bool:
-	return _combo_active and get_recovery_progress() >= recovery_buffer_threshold
+func get_swing_pivot_yaw() -> float:
+	return _swing_pivot.rotation.y
 
 
 func is_top_level_floater() -> bool:
@@ -124,14 +134,6 @@ func swing_arc_degrees() -> float:
 	return SWING_ARC_DEGREES
 
 
-func get_blade_tip_direction_world() -> Vector3:
-	var tip := _blade.global_position - _hilt.global_position
-	tip.y = 0.0
-	if tip.length_squared() < 1e-8:
-		tip = Vector3(0.0, 1.0, 0.0)
-	return tip.normalized()
-
-
 func get_blade_tip_up_alignment() -> float:
 	var tip_dir := (_blade.global_position - _hilt.global_position).normalized()
 	return tip_dir.dot(Vector3.UP)
@@ -139,16 +141,18 @@ func get_blade_tip_up_alignment() -> float:
 
 func begin_attack_combo(facing_yaw: float) -> void:
 	_combo_active = true
-	_attack_time = 0.0
 	_mode = FollowMode.ATTACK
 	_swing_facing_yaw = facing_yaw
 	_linear_velocity = Vector3.ZERO
+	_strike_origin_position = global_position
 	_trail.visible = false
 	_trail.mesh = null
-	_trail_from_angle = deg_to_rad(SWING_START_DEG)
+	_trail_from_angle = _swing_pivot.rotation.y
 	_trail_to_angle = _trail_from_angle
 	global_rotation = Vector3(0.0, _swing_facing_yaw, 0.0)
-	_apply_strike_start_pose()
+	var step := get_default_physics_step()
+	_attack_time = step
+	_apply_attack_sample(_attack_time)
 
 
 func advance_attack_combo(delta: float) -> bool:
@@ -179,31 +183,23 @@ func _finish_attack_combo() -> void:
 func _apply_attack_sample(elapsed: float) -> void:
 	global_rotation = Vector3(0.0, _swing_facing_yaw, 0.0)
 	if elapsed < wind_up_duration:
-		_apply_wind_up(elapsed / wind_up_duration)
+		_apply_wind_up()
 	elif elapsed < wind_up_duration + strike_duration:
-		_apply_strike(
-			(elapsed - wind_up_duration) / strike_duration
-		)
+		var strike_t := (elapsed - wind_up_duration) / strike_duration
+		_apply_strike(strike_t)
 	else:
 		var recovery_elapsed := elapsed - wind_up_duration - strike_duration
 		_apply_recovery(recovery_elapsed / recovery_duration)
 
 
-func _apply_wind_up(_t: float) -> void:
-	_apply_strike_start_pose()
-	_trail.visible = false
-
-
-func _apply_strike_start_pose() -> void:
-	global_position = _swing_center_world()
-	_swing_pivot.rotation.y = deg_to_rad(SWING_START_DEG)
-	_sword_root.rotation.x = deg_to_rad(lerpf(REST_BLADE_PITCH_DEG, 0.0, 0.18))
-	_align_hitbox_to_sword()
+func _apply_wind_up() -> void:
+	_apply_strike(0.0)
 
 
 func _apply_strike(t: float) -> void:
 	var eased := _ease_in_cubic(clampf(t, 0.0, 1.0))
-	global_position = _swing_center_world()
+	var center := _swing_center_world()
+	global_position = _strike_origin_position.lerp(center, minf(eased * 1.75, 1.0))
 	var angle := deg_to_rad(lerpf(SWING_START_DEG, SWING_END_DEG, eased))
 	_swing_pivot.rotation.y = angle
 	_sword_root.rotation.x = deg_to_rad(lerpf(REST_BLADE_PITCH_DEG, 0.0, minf(eased * 1.35, 1.0)))
@@ -218,13 +214,11 @@ func _apply_strike(t: float) -> void:
 func _apply_recovery(t: float) -> void:
 	var eased := _ease_in_out_quad(clampf(t, 0.0, 1.0))
 	var anchor := _hover_anchor_world()
-	global_position = _swing_center_world().lerp(anchor, eased)
+	global_position = global_position.lerp(anchor, eased * 0.35)
 	_mode = FollowMode.RETURN
 	var yaw := lerpf(SWING_END_DEG, REST_SIDE_YAW_DEG, eased)
 	_swing_pivot.rotation = Vector3(0.0, deg_to_rad(yaw), 0.0)
 	_sword_root.rotation.x = deg_to_rad(lerpf(0.0, REST_BLADE_PITCH_DEG, eased))
-	if eased > 0.85:
-		_mode = FollowMode.RETURN
 
 
 func _update_hover_follow(delta: float) -> void:
@@ -367,10 +361,6 @@ func _set_trail_alpha(alpha: float) -> void:
 	var c := _trail_material.albedo_color
 	c.a = alpha
 	_trail_material.albedo_color = c
-
-
-static func _ease_out_quad(t: float) -> float:
-	return 1.0 - (1.0 - t) * (1.0 - t)
 
 
 static func _ease_in_cubic(t: float) -> float:

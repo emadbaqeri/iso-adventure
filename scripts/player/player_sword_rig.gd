@@ -9,15 +9,15 @@ const SWING_END_DEG := 70.0
 const REST_SIDE_YAW_DEG := -62.0
 ## Blade extends along local -Z; +90° X points tip at the sky.
 const REST_BLADE_PITCH_DEG := 90.0
-const WIND_BACK_YAW_DEG := -108.0
 const BLADE_REACH := 0.92
 const TRAIL_INNER := 0.52
 const TRAIL_OUTER := 1.02
 
 @export_group("Attack Phases")
-@export var wind_up_duration: float = 0.12
-@export var strike_duration: float = 0.12
+@export var wind_up_duration: float = 0.025
+@export var strike_duration: float = 0.08
 @export var recovery_duration: float = 0.2
+@export_range(0.0, 1.0, 0.01) var recovery_buffer_threshold: float = 0.55
 
 @export_group("Hover Follow")
 @export var spring_stiffness: float = 42.0
@@ -50,7 +50,6 @@ var _trail_to_angle: float = 0.0
 var _swing_facing_yaw: float = 0.0
 var _attack_time: float = 0.0
 var _combo_active: bool = false
-var _attack_start_hover: Vector3 = Vector3.ZERO
 
 
 func _ready() -> void:
@@ -98,7 +97,23 @@ func is_ready_for_attack() -> bool:
 
 
 func is_strike_phase() -> bool:
-	return _combo_active and get_attack_phase_name() == &"strike"
+	if not _combo_active:
+		return false
+	return (
+		_attack_time >= wind_up_duration
+		and _attack_time < wind_up_duration + strike_duration
+	)
+
+
+func get_recovery_progress() -> float:
+	if not _combo_active or get_attack_phase_name() != &"recovery":
+		return 0.0
+	var elapsed := _attack_time - wind_up_duration - strike_duration
+	return clampf(elapsed / recovery_duration, 0.0, 1.0)
+
+
+func accepts_attack_buffer() -> bool:
+	return _combo_active and get_recovery_progress() >= recovery_buffer_threshold
 
 
 func is_top_level_floater() -> bool:
@@ -127,12 +142,13 @@ func begin_attack_combo(facing_yaw: float) -> void:
 	_attack_time = 0.0
 	_mode = FollowMode.ATTACK
 	_swing_facing_yaw = facing_yaw
-	_attack_start_hover = global_position
+	_linear_velocity = Vector3.ZERO
 	_trail.visible = false
 	_trail.mesh = null
 	_trail_from_angle = deg_to_rad(SWING_START_DEG)
 	_trail_to_angle = _trail_from_angle
-	_apply_attack_sample(0.0)
+	global_rotation = Vector3(0.0, _swing_facing_yaw, 0.0)
+	_apply_strike_start_pose()
 
 
 func advance_attack_combo(delta: float) -> bool:
@@ -173,14 +189,16 @@ func _apply_attack_sample(elapsed: float) -> void:
 		_apply_recovery(recovery_elapsed / recovery_duration)
 
 
-func _apply_wind_up(t: float) -> void:
-	var eased := _ease_out_quad(clampf(t, 0.0, 1.0))
-	var wind_back := _wind_back_world()
-	global_position = _attack_start_hover.lerp(wind_back, eased)
-	var yaw := lerpf(REST_SIDE_YAW_DEG, WIND_BACK_YAW_DEG, eased)
-	_swing_pivot.rotation = Vector3(0.0, deg_to_rad(yaw), 0.0)
-	_sword_root.rotation.x = deg_to_rad(REST_BLADE_PITCH_DEG)
+func _apply_wind_up(_t: float) -> void:
+	_apply_strike_start_pose()
 	_trail.visible = false
+
+
+func _apply_strike_start_pose() -> void:
+	global_position = _swing_center_world()
+	_swing_pivot.rotation.y = deg_to_rad(SWING_START_DEG)
+	_sword_root.rotation.x = deg_to_rad(lerpf(REST_BLADE_PITCH_DEG, 0.0, 0.18))
+	_align_hitbox_to_sword()
 
 
 func _apply_strike(t: float) -> void:
@@ -240,13 +258,6 @@ func _hover_anchor_world() -> Vector3:
 	offset += Vector3.UP * shoulder_offset.y
 	offset += basis.z * shoulder_offset.z
 	return _player.global_position + offset + Vector3(0.0, bob, 0.0)
-
-
-func _wind_back_world() -> Vector3:
-	if _player == null:
-		return global_position
-	var basis := _player.global_transform.basis
-	return _player.global_position + basis.x * -0.32 + Vector3.UP * 0.86 + basis.z * 0.22
 
 
 func _hover_rotation_basis() -> Basis:

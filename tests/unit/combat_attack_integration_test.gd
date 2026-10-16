@@ -13,7 +13,7 @@ func test_player_attack_reduces_slime_health() -> void:
 	player.snap_to_facing(Vector3.FORWARD)
 	assert_int(health.current_health).is_equal(3)
 	runner.simulate_action_press("attack")
-	await _wait_physics(runner, 32)
+	await _wait_physics(runner, 24)
 	runner.simulate_action_release("attack")
 	await _wait_physics(runner, 16)
 	assert_int(health.current_health).is_less(3)

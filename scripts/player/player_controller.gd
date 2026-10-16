@@ -40,6 +40,7 @@ var _knockback_time_left: float = 0.0
 var _damage_flash_time: float = 0.0
 var _body_base_color: Color = Color.WHITE
 var _nose_base_color: Color = Color.WHITE
+var _attack_input_buffered: bool = false
 
 
 func _ready() -> void:
@@ -110,8 +111,23 @@ func try_begin_attack() -> bool:
 		return false
 	if _state_machine.get_current_state_name() == &"Attack":
 		return false
+	_attack_input_buffered = false
 	_state_machine.change_state(&"Attack")
 	return true
+
+
+func try_buffer_attack_input() -> bool:
+	if _sword_rig.accepts_attack_buffer():
+		_attack_input_buffered = true
+		return true
+	return false
+
+
+func consume_attack_buffer() -> bool:
+	if not _attack_input_buffered:
+		return false
+	_attack_input_buffered = false
+	return _health.is_alive()
 
 
 func start_attack_cooldown() -> void:

@@ -26,6 +26,9 @@ func physics_update(delta: float) -> void:
 	if controller == null:
 		return
 
+	if Input.is_action_just_pressed("attack"):
+		controller.try_buffer_attack_input()
+
 	var still_attacking := controller.advance_melee_attack(delta)
 	_update_hitbox(controller)
 
@@ -33,6 +36,9 @@ func physics_update(delta: float) -> void:
 	controller.physics_step(delta, facing, false, controller.attack_move_multiplier)
 
 	if not still_attacking:
+		if controller.consume_attack_buffer():
+			controller.begin_melee_attack()
+			return
 		controller.start_attack_cooldown()
 		if controller.has_move_input():
 			machine.change_state(&"Move")

@@ -8,7 +8,7 @@ export_credentials.cfg
 
 # Build output
 build/
-bin/
+/bin/
 *.pck
 *.zip
 

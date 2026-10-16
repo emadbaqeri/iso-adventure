@@ -3,14 +3,14 @@ extends CharacterBody3D
 
 @export_group("Movement")
 @export var move_speed: float = 7.5
-## Rate to reach top speed (~0.06s at defaults).
-@export var acceleration: float = 130.0
-## Rate to stop (~0.04s at defaults).
-@export var deceleration: float = 200.0
+## Rate to reach top speed (~0.13s at defaults).
+@export var acceleration: float = 58.0
+## Rate to stop (~0.1s at defaults).
+@export var deceleration: float = 75.0
 @export var gravity: float = 28.0
 
 @export_group("Facing")
-## Higher = snappier turn toward move direction (Hades-like).
+## Higher = snappier turn toward move direction.
 @export var rotation_speed: float = 36.0
 
 @export_group("Isometric Camera")
@@ -46,14 +46,15 @@ func physics_step(delta: float, direction: Vector3, is_moving: bool) -> void:
 	velocity.z = move_toward(velocity.z, target_velocity.z, rate * delta)
 
 	if not is_moving:
-		if absf(velocity.x) < 0.08:
+		if absf(velocity.x) < 0.05:
 			velocity.x = 0.0
-		if absf(velocity.z) < 0.08:
+		if absf(velocity.z) < 0.05:
 			velocity.z = 0.0
 
 	if is_moving and direction.length_squared() > 0.0001:
-		var target_angle := atan2(direction.x, direction.z)
-		var turn := minf(1.0, rotation_speed * delta)
-		rotation.y = lerp_angle(rotation.y, target_angle, turn)
+		var target_yaw := PlayerFacingMath.direction_to_yaw(direction)
+		rotation.y = PlayerFacingMath.rotate_yaw_toward(
+			rotation.y, target_yaw, delta, rotation_speed
+		)
 
 	move_and_slide()

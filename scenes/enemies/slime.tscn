@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://cslime_enemy"]
+[gd_scene load_steps=17 format=3 uid="uid://cslime_enemy"]
 
 [ext_resource type="Script" path="res://scripts/enemies/slime/slime_enemy.gd" id="1_slime"]
 [ext_resource type="Script" path="res://scripts/enemies/slime/slime_state_machine.gd" id="2_sm"]
@@ -67,6 +67,8 @@ damage = 1
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="AttackHitbox"]
 shape = SubResource("BoxShape3D_attack")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
 
 [node name="SlimeStateMachine" type="Node" parent="."]
 script = ExtResource("2_sm")

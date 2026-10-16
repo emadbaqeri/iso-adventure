@@ -10,11 +10,14 @@ if [[ ! -x "$GODOT" ]]; then
   exit 1
 fi
 
-# Headless display + Vulkan uses Forward+ (lavapipe on Linux CI; Metal on macOS).
-"$GODOT" \
+if ! command -v xvfb-run >/dev/null 2>&1; then
+  echo "xvfb-run is required for Forward+ render smoke (real window, virtual framebuffer)" >&2
+  exit 1
+fi
+
+# Real window on xvfb (not --headless): closer to desktop Forward+ / Metal behavior.
+xvfb-run -a "$GODOT" \
   --path "$ROOT" \
-  --headless \
-  --display-driver headless \
   --rendering-driver vulkan \
   --audio-driver Dummy \
   -s res://tests/smoke/render_forward_smoke.gd \
@@ -23,6 +26,12 @@ fi
 if grep -qE '^(ERROR:|SCRIPT ERROR:|USER ERROR:)' "$LOG"; then
   echo "render_forward_smoke: ERROR lines found in log" >&2
   grep -E '^(ERROR:|SCRIPT ERROR:|USER ERROR:)' "$LOG" >&2 || true
+  exit 1
+fi
+
+if grep -qE 'det == 0|invert \(core/math/basis\.cpp' "$LOG"; then
+  echo "render_forward_smoke: degenerate basis (zero scale / bad look_at) in log" >&2
+  grep -E 'det == 0|invert \(core/math/basis\.cpp' "$LOG" >&2 || true
   exit 1
 fi
 

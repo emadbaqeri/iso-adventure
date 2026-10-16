@@ -19,6 +19,7 @@ extends CharacterBody3D
 @onready var attack_hitbox: HitboxComponent = $AttackHitbox
 @onready var visual: Node3D = $Visual
 @onready var body_mesh: MeshInstance3D = $Visual/Body
+@onready var navigation_agent: NavigationAgent3D = $NavigationAgent3D
 
 var hurt_lock_time: float = 0.0
 var telegraph_elapsed: float = 0.0
@@ -45,6 +46,9 @@ func _ready() -> void:
 			_base_body_color = mat.albedo_color
 	health.damaged.connect(_on_damaged)
 	health.died.connect(_on_died)
+	navigation_agent.path_desired_distance = 0.4
+	navigation_agent.target_desired_distance = 1.6
+	navigation_agent.avoidance_enabled = false
 	call_deferred("_find_player")
 
 
@@ -78,14 +82,29 @@ func distance_to_player() -> float:
 	return global_position.distance_to(target.global_position)
 
 
+func get_chase_direction() -> Vector3:
+	var player := get_player()
+	if player == null:
+		return Vector3.ZERO
+	navigation_agent.target_position = player.global_position
+	if navigation_agent.is_navigation_finished():
+		return direction_to_player_flat()
+	var next_pos := navigation_agent.get_next_path_position()
+	var to_next := next_pos - global_position
+	to_next.y = 0.0
+	if to_next.length_squared() < 1e-6:
+		return direction_to_player_flat()
+	return to_next.normalized()
+
+
 func direction_to_player_flat() -> Vector3:
 	var target := get_player()
 	if target == null:
 		return Vector3.ZERO
 	var delta := target.global_position - global_position
 	delta.y = 0.0
-	if delta.length_squared() < 0.0001:
-		return Vector3.FORWARD
+	if delta.length_squared() < 1e-6:
+		return -global_transform.basis.z.normalized()
 	return delta.normalized()
 
 

@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3 uid="uid://ctest_room_scene"]
+[gd_scene load_steps=20 format=3 uid="uid://ctest_room_scene"]
 
 [ext_resource type="PackedScene" uid="uid://cplayer_scene" path="res://scenes/player/player.tscn" id="1_player"]
 [ext_resource type="PackedScene" uid="uid://cslime_enemy" path="res://scenes/enemies/slime.tscn" id="2_slime"]
@@ -11,6 +11,7 @@
 [ext_resource type="Script" path="res://scripts/rendering/render_mood_controller.gd" id="7_mood"]
 [ext_resource type="Resource" path="res://resources/moods/warm_day.tres" id="8_warm"]
 [ext_resource type="Resource" path="res://resources/moods/cool_dungeon.tres" id="9_dungeon"]
+[ext_resource type="Script" path="res://scripts/levels/test_room_navigation.gd" id="10_nav"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.42, 0.52, 0.72, 1)
@@ -49,6 +50,12 @@ size = Vector3(4, 2.4, 1.2)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_wall"]
 size = Vector3(4, 2.4, 1.2)
+
+[sub_resource type="NavigationMesh" id="NavigationMesh_room"]
+agent_radius = 0.45
+agent_height = 1.4
+cell_size = 0.25
+cell_height = 0.2
 
 [node name="TestRoom" type="Node3D"]
 
@@ -124,6 +131,10 @@ surface_material_override/0 = ExtResource("6_warm")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="World/PropCrate"]
 shape = SubResource("BoxShape3D_wall")
+
+[node name="NavigationRegion3D" type="NavigationRegion3D" parent="World"]
+navigation_mesh = SubResource("NavigationMesh_room")
+script = ExtResource("10_nav")
 
 [node name="Player" parent="." instance=ExtResource("1_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)

@@ -24,7 +24,9 @@ func physics_update(delta: float) -> void:
 	if slime == null:
 		return
 	_elapsed += delta
-	var t := clampf(_elapsed / FADE_TIME, 0.0, 1.0)
-	slime.scale = Vector3.ONE * (1.0 - t)
 	if _elapsed >= FADE_TIME:
+		slime.visible = false
 		slime.queue_free()
+		return
+	var t := clampf(_elapsed / FADE_TIME, 0.0, 1.0)
+	SafeTransform3D.apply_uniform_scale(slime, 1.0 - t)

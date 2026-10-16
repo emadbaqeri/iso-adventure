@@ -14,6 +14,7 @@ func enter() -> void:
 	_hitbox_enabled = false
 	var controller := machine.owner_body as PlayerController
 	if controller != null:
+		controller.snap_to_facing(controller.get_facing_direction())
 		controller.begin_attack_visual()
 
 
@@ -45,6 +46,8 @@ func physics_update(delta: float) -> void:
 
 func _update_hitbox(controller: PlayerController) -> void:
 	var should_hit := _elapsed >= HITBOX_ON and _elapsed < HITBOX_OFF
+	if should_hit:
+		controller.align_attack_hitbox()
 	if should_hit == _hitbox_enabled:
 		return
 	_hitbox_enabled = should_hit

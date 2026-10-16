@@ -13,6 +13,7 @@ func _ready() -> void:
 	collision_layer = CombatLayers.HITBOX
 	collision_mask = CombatLayers.HURTBOX
 	monitoring = false
+	monitorable = false
 	area_entered.connect(_on_area_entered)
 	if owner_root == null:
 		owner_root = _find_owner_root()
@@ -21,10 +22,16 @@ func _ready() -> void:
 func activate() -> void:
 	_struck.clear()
 	monitoring = true
+	_apply_overlaps()
 
 
 func deactivate() -> void:
 	monitoring = false
+
+
+func _apply_overlaps() -> void:
+	for area: Area3D in get_overlapping_areas():
+		_on_area_entered(area)
 
 
 func _on_area_entered(area: Area3D) -> void:

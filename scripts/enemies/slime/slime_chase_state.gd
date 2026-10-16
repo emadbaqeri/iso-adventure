@@ -15,10 +15,10 @@ func physics_update(delta: float) -> void:
 	if dist <= slime.attack_range:
 		machine.change_state(&"Attack")
 		return
-	var dir := slime.direction_to_player_flat()
+	var dir := slime.get_chase_direction()
 	slime.step_gravity(delta)
 	slime.velocity.x = dir.x * slime.chase_speed
 	slime.velocity.z = dir.z * slime.chase_speed
 	if dir.length_squared() > 0.0001:
-		slime.look_at(slime.global_position + dir, Vector3.UP)
+		SafeTransform3D.look_flat_y(slime, dir)
 	slime.move_slide()

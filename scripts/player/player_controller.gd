@@ -20,22 +20,32 @@ extends CharacterBody3D
 @export_group("Combat")
 @export var attack_cooldown: float = 0.45
 @export var attack_move_multiplier: float = 0.35
+@export var hit_knockback_strength: float = 5.5
+@export var hit_knockback_decay: float = 14.0
 
 @onready var _state_machine: PlayerStateMachine = $PlayerStateMachine
 @onready var _health: HealthComponent = $HealthComponent
+@onready var _hurtbox: HurtboxComponent = $Hurtbox
 @onready var _attack_hitbox: HitboxComponent = $AttackPivot/AttackHitbox
-@onready var _nose_visual: MeshInstance3D = $Visual/Nose
-@onready var _body_visual: MeshInstance3D = $Visual/Body
+@onready var _visual: Node3D = $Visual
+@onready var _attack_pivot: Node3D = $AttackPivot
+@onready var _body_mesh: MeshInstance3D = $Visual/Body
+@onready var _nose_mesh: MeshInstance3D = $Visual/Nose
 
 var _cooldown_left: float = 0.0
 var _last_facing: Vector3 = Vector3.FORWARD
-var _invincible_flash_tick: float = 0.0
+var _hit_knockback: Vector3 = Vector3.ZERO
 var _damage_flash_time: float = 0.0
+var _body_base_color: Color = Color.WHITE
+var _nose_base_color: Color = Color.WHITE
 
 
 func _ready() -> void:
 	add_to_group("player")
 	_attack_hitbox.owner_root = self
+	_duplicate_visual_materials()
+	_cache_visual_colors()
+	_hurtbox.hit_received.connect(_on_hurtbox_hit)
 	_health.damaged.connect(_on_damaged)
 	_health.died.connect(_on_died)
 
@@ -44,7 +54,7 @@ func _physics_process(delta: float) -> void:
 	if _cooldown_left > 0.0:
 		_cooldown_left -= delta
 	_tick_damage_flash(delta)
-	_tick_invincible_flash(delta)
+	_decay_hit_knockback(delta)
 	_state_machine.physics_update(delta)
 
 
@@ -65,6 +75,21 @@ func get_facing_direction() -> Vector3:
 	return _last_facing
 
 
+func get_mesh_forward_flat() -> Vector3:
+	var forward := -global_transform.basis.z
+	forward.y = 0.0
+	if forward.length_squared() < 1e-8:
+		return _last_facing
+	return forward.normalized()
+
+
+func snap_to_facing(direction: Vector3) -> void:
+	if direction.length_squared() < 1e-8:
+		return
+	_last_facing = direction.normalized()
+	rotation.y = PlayerFacingMath.direction_to_yaw(_last_facing)
+
+
 func can_attack() -> bool:
 	return _cooldown_left <= 0.0 and _health.is_alive()
 
@@ -82,21 +107,37 @@ func start_attack_cooldown() -> void:
 	_cooldown_left = attack_cooldown
 
 
+func align_attack_hitbox() -> void:
+	var forward := get_mesh_forward_flat()
+	var center := global_position + Vector3(0.0, 0.75, 0.0)
+	_attack_hitbox.global_position = center + forward * 0.95
+
+
 func set_attack_hitbox_active(active: bool) -> void:
-	_attack_hitbox.position = Vector3(0.0, 0.75, -0.85)
+	align_attack_hitbox()
 	if active:
 		_attack_hitbox.activate()
+		_attack_hitbox.call_deferred("_apply_overlaps")
 	else:
 		_attack_hitbox.deactivate()
 
 
 func begin_attack_visual() -> void:
-	_nose_visual.scale = Vector3(1.2, 1.2, 2.0)
+	_attack_pivot.scale = Vector3(1.0, 1.0, 1.35)
 
 
 func end_attack_visual() -> void:
-	_nose_visual.scale = Vector3.ONE
+	_attack_pivot.scale = Vector3.ONE
 	set_attack_hitbox_active(false)
+
+
+func apply_hit_knockback(from_world: Vector3) -> void:
+	var push := global_position - from_world
+	push.y = 0.0
+	if push.length_squared() < 1e-6:
+		push = _last_facing * -1.0
+	push = push.normalized()
+	_hit_knockback = push * hit_knockback_strength
 
 
 func physics_step(
@@ -110,19 +151,24 @@ func physics_step(
 	else:
 		velocity.y = 0.0
 
-	var speed_scale := move_multiplier
-	var target_velocity := direction * move_speed * speed_scale
-	var rate := acceleration if is_moving else deceleration
-	velocity.x = move_toward(velocity.x, target_velocity.x, rate * delta)
-	velocity.z = move_toward(velocity.z, target_velocity.z, rate * delta)
-
-	if not is_moving:
+	var knockback_active := _hit_knockback.length_squared() > 0.04
+	if knockback_active:
+		velocity.x = _hit_knockback.x
+		velocity.z = _hit_knockback.z
+	elif is_moving:
+		var speed_scale := move_multiplier
+		var target_velocity := direction * move_speed * speed_scale
+		velocity.x = move_toward(velocity.x, target_velocity.x, acceleration * delta)
+		velocity.z = move_toward(velocity.z, target_velocity.z, acceleration * delta)
+	else:
+		velocity.x = move_toward(velocity.x, 0.0, deceleration * delta)
+		velocity.z = move_toward(velocity.z, 0.0, deceleration * delta)
 		if absf(velocity.x) < 0.05:
 			velocity.x = 0.0
 		if absf(velocity.z) < 0.05:
 			velocity.z = 0.0
 
-	if is_moving and direction.length_squared() > 0.0001:
+	if is_moving and direction.length_squared() > 0.0001 and not knockback_active:
 		var target_yaw := PlayerFacingMath.direction_to_yaw(direction)
 		rotation.y = PlayerFacingMath.rotate_yaw_toward(
 			rotation.y, target_yaw, delta, rotation_speed
@@ -132,8 +178,15 @@ func physics_step(
 	move_and_slide()
 
 
+func _on_hurtbox_hit(_damage: int, source: Node) -> void:
+	var from_pos := global_position
+	if source is Node3D:
+		from_pos = (source as Node3D).global_position
+	apply_hit_knockback(from_pos)
+
+
 func _on_damaged(_amount: int, _remaining: int) -> void:
-	_flash_damage_color()
+	_flash_damage_material()
 
 
 func _on_died() -> void:
@@ -142,20 +195,36 @@ func _on_died() -> void:
 	get_tree().reload_current_scene()
 
 
-func _tick_invincible_flash(delta: float) -> void:
-	if not _health.invincible:
-		_invincible_flash_tick = 0.0
+func _decay_hit_knockback(delta: float) -> void:
+	if _hit_knockback.length_squared() <= 0.0001:
+		_hit_knockback = Vector3.ZERO
 		return
-	_invincible_flash_tick -= delta
-	if _invincible_flash_tick <= 0.0:
-		_flash_damage_color(Color(1.0, 1.0, 1.0), 0.06)
-		_invincible_flash_tick = 0.08
+	var decay := hit_knockback_decay * delta
+	_hit_knockback = _hit_knockback.move_toward(Vector3.ZERO, decay)
 
 
-func _flash_damage_color(_color: Color = Color(1.0, 0.35, 0.35), duration: float = 0.12) -> void:
+func _duplicate_visual_materials() -> void:
+	for mesh: MeshInstance3D in [_body_mesh, _nose_mesh]:
+		var shared := mesh.get_surface_override_material(0) as StandardMaterial3D
+		if shared != null:
+			mesh.set_surface_override_material(0, shared.duplicate())
+
+
+func _cache_visual_colors() -> void:
+	var body_mat := _body_mesh.get_surface_override_material(0) as StandardMaterial3D
+	if body_mat != null:
+		_body_base_color = body_mat.albedo_color
+	var nose_mat := _nose_mesh.get_surface_override_material(0) as StandardMaterial3D
+	if nose_mat != null:
+		_nose_base_color = nose_mat.albedo_color
+
+
+func _flash_damage_material(
+	color: Color = Color(1.0, 0.35, 0.35),
+	duration: float = 0.12
+) -> void:
 	_damage_flash_time = duration
-	_body_visual.scale = Vector3(1.08, 0.92, 1.08)
-	_nose_visual.scale = Vector3(1.2, 1.2, 1.2)
+	_set_visual_colors(color, color)
 
 
 func _tick_damage_flash(delta: float) -> void:
@@ -163,5 +232,13 @@ func _tick_damage_flash(delta: float) -> void:
 		return
 	_damage_flash_time -= delta
 	if _damage_flash_time <= 0.0:
-		_body_visual.scale = Vector3.ONE
-		_nose_visual.scale = Vector3.ONE
+		_set_visual_colors(_body_base_color, _nose_base_color)
+
+
+func _set_visual_colors(body_color: Color, nose_color: Color) -> void:
+	var body_mat := _body_mesh.get_surface_override_material(0) as StandardMaterial3D
+	if body_mat != null:
+		body_mat.albedo_color = body_color
+	var nose_mat := _nose_mesh.get_surface_override_material(0) as StandardMaterial3D
+	if nose_mat != null:
+		nose_mat.albedo_color = nose_color

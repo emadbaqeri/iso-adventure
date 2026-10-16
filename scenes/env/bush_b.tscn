@@ -1,0 +1,9 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/env/bush_b.glb" id="1_glb"]
+[ext_resource type="Script" path="res://scripts/env/env_palette_visual.gd" id="2_script"]
+
+[node name="bush_b" type="Node3D"]
+script = ExtResource("2_script")
+
+[node name="Visual" parent="." instance=ExtResource("1_glb")]

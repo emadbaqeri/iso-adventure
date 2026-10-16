@@ -52,4 +52,4 @@ func _open_gate(instant: bool = false) -> void:
 func _set_collision_enabled(enabled: bool) -> void:
 	var collision := get_node_or_null("CollisionShape3D") as CollisionShape3D
 	if collision != null:
-		collision.disabled = not enabled
+		collision.set_deferred("disabled", not enabled)

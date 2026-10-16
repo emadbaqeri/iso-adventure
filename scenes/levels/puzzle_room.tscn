@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://cpuzzle_room_scene"]
+[gd_scene load_steps=13 format=3 uid="uid://cpuzzle_room_scene"]
 
 [ext_resource type="Script" path="res://scripts/puzzle/puzzle_controller.gd" id="1_controller"]
 [ext_resource type="PackedScene" uid="uid://cpushable_block" path="res://scenes/puzzle/pushable_block.tscn" id="2_block"]
@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" uid="uid://cpuzzle_goal" path="res://scenes/puzzle/puzzle_goal.tscn" id="5_goal"]
 [ext_resource type="Material" path="res://materials/lowpoly_floor.tres" id="6_floor"]
 [ext_resource type="Material" path="res://materials/lowpoly_default.tres" id="7_wall"]
+[ext_resource type="Script" path="res://scripts/levels/room_env_dressing.gd" id="8_env"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_floor"]
 size = Vector3(18, 0.4, 14)
@@ -67,6 +68,11 @@ surface_material_override/0 = ExtResource("7_wall")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="WallNorth"]
 shape = SubResource("BoxShape3D_wall")
+
+[node name="EnvDressing" type="Node3D" parent="."]
+script = ExtResource("8_env")
+is_puzzle_room = true
+foliage_seed = 8821
 
 [node name="WallEast" type="StaticBody3D" parent="."]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 7.4, 1.2, -1)

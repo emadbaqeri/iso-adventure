@@ -1,0 +1,11 @@
+[gd_resource type="StandardMaterial3D" load_steps=2 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/env/palette.png" id="1_palette"]
+
+[resource]
+resource_local_to_scene = false
+albedo_texture = ExtResource("1_palette")
+texture_filter = 0
+roughness = 1.0
+metallic = 0.0
+specular_mode = 0

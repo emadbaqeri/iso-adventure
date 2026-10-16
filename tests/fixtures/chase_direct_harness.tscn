@@ -1,0 +1,22 @@
+[gd_scene load_steps=4 format=3 uid="uid://cchase_direct_harness"]
+
+[ext_resource type="PackedScene" uid="uid://cplayer_scene" path="res://scenes/player/player.tscn" id="1_player"]
+[ext_resource type="PackedScene" uid="uid://cslime_enemy" path="res://scenes/enemies/slime.tscn" id="2_slime"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
+size = Vector3(24, 0.4, 24)
+
+[node name="ChaseDirectHarness" type="Node3D"]
+
+[node name="Floor" type="StaticBody3D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, 0)
+shape = SubResource("BoxShape3D_floor")
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+
+[node name="Slime" parent="." instance=ExtResource("2_slime")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 0)

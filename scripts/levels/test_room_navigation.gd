@@ -15,3 +15,4 @@ func _bake_from_world() -> void:
 	NavigationServer3D.parse_source_geometry_data(nav, geometry, world)
 	NavigationServer3D.bake_from_source_geometry_data(nav, geometry)
 	navigation_mesh = nav
+	await get_tree().physics_frame

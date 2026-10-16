@@ -49,7 +49,14 @@ func _ready() -> void:
 	navigation_agent.path_desired_distance = 0.4
 	navigation_agent.target_desired_distance = 1.6
 	navigation_agent.avoidance_enabled = false
+	call_deferred("_setup_navigation")
 	call_deferred("_find_player")
+
+
+func _setup_navigation() -> void:
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	navigation_agent.target_position = global_position
 
 
 func _physics_process(delta: float) -> void:
@@ -83,18 +90,7 @@ func distance_to_player() -> float:
 
 
 func get_chase_direction() -> Vector3:
-	var player := get_player()
-	if player == null:
-		return Vector3.ZERO
-	navigation_agent.target_position = player.global_position
-	if navigation_agent.is_navigation_finished():
-		return direction_to_player_flat()
-	var next_pos := navigation_agent.get_next_path_position()
-	var to_next := next_pos - global_position
-	to_next.y = 0.0
-	if to_next.length_squared() < 1e-6:
-		return direction_to_player_flat()
-	return to_next.normalized()
+	return SlimeNavigation.get_chase_direction(self, navigation_agent)
 
 
 func direction_to_player_flat() -> Vector3:

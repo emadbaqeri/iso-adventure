@@ -38,7 +38,7 @@ func physics_update(delta: float) -> void:
 
 	if _elapsed >= ATTACK_TIME:
 		controller.start_attack_cooldown()
-		if controller.get_input_vector().length_squared() > 0.01:
+		if controller.has_move_input():
 			machine.change_state(&"Move")
 		else:
 			machine.change_state(&"Idle")

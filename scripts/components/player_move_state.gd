@@ -8,7 +8,7 @@ func physics_update(delta: float) -> void:
 		return
 	if Input.is_action_just_pressed("attack") and controller.try_begin_attack():
 		return
-	if controller.get_input_vector().length_squared() <= 0.01:
+	if not controller.has_move_input():
 		machine.change_state(&"Idle")
 		return
 	var direction := controller.get_world_move_direction()

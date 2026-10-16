@@ -21,7 +21,8 @@ extends CharacterBody3D
 @export var attack_cooldown: float = 0.45
 @export var attack_move_multiplier: float = 0.35
 @export var hit_knockback_strength: float = 5.5
-@export var hit_knockback_decay: float = 14.0
+@export var hit_knockback_decay: float = 18.0
+@export var hit_knockback_duration: float = 0.18
 
 @onready var _state_machine: PlayerStateMachine = $PlayerStateMachine
 @onready var _health: HealthComponent = $HealthComponent
@@ -35,6 +36,7 @@ extends CharacterBody3D
 var _cooldown_left: float = 0.0
 var _last_facing: Vector3 = Vector3.FORWARD
 var _hit_knockback: Vector3 = Vector3.ZERO
+var _knockback_time_left: float = 0.0
 var _damage_flash_time: float = 0.0
 var _body_base_color: Color = Color.WHITE
 var _nose_base_color: Color = Color.WHITE
@@ -54,12 +56,12 @@ func _physics_process(delta: float) -> void:
 	if _cooldown_left > 0.0:
 		_cooldown_left -= delta
 	_tick_damage_flash(delta)
-	_decay_hit_knockback(delta)
+	_tick_knockback(delta)
 	_state_machine.physics_update(delta)
 
 
 func get_input_vector() -> Vector2:
-	return Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	return PlayerMovementInput.read_move_vector()
 
 
 func get_world_move_direction() -> Vector3:
@@ -68,10 +70,15 @@ func get_world_move_direction() -> Vector3:
 	)
 
 
+func has_move_input() -> bool:
+	return PlayerMovementInput.has_move_input()
+
+
 func get_facing_direction() -> Vector3:
-	var move_dir := get_world_move_direction()
-	if move_dir.length_squared() > 0.0001:
-		_last_facing = move_dir
+	if has_move_input():
+		var move_dir := get_world_move_direction()
+		if move_dir.length_squared() > 0.0001:
+			_last_facing = move_dir
 	return _last_facing
 
 
@@ -138,6 +145,11 @@ func apply_hit_knockback(from_world: Vector3) -> void:
 		push = _last_facing * -1.0
 	push = push.normalized()
 	_hit_knockback = push * hit_knockback_strength
+	_knockback_time_left = hit_knockback_duration
+
+
+func is_in_hit_knockback() -> bool:
+	return _knockback_time_left > 0.0
 
 
 func physics_step(
@@ -151,11 +163,12 @@ func physics_step(
 	else:
 		velocity.y = 0.0
 
-	var knockback_active := _hit_knockback.length_squared() > 0.04
-	if knockback_active:
+	var allow_move_input := is_moving and has_move_input() and not is_in_hit_knockback()
+
+	if is_in_hit_knockback():
 		velocity.x = _hit_knockback.x
 		velocity.z = _hit_knockback.z
-	elif is_moving:
+	elif allow_move_input:
 		var speed_scale := move_multiplier
 		var target_velocity := direction * move_speed * speed_scale
 		velocity.x = move_toward(velocity.x, target_velocity.x, acceleration * delta)
@@ -168,7 +181,7 @@ func physics_step(
 		if absf(velocity.z) < 0.05:
 			velocity.z = 0.0
 
-	if is_moving and direction.length_squared() > 0.0001 and not knockback_active:
+	if allow_move_input and direction.length_squared() > 0.0001:
 		var target_yaw := PlayerFacingMath.direction_to_yaw(direction)
 		rotation.y = PlayerFacingMath.rotate_yaw_toward(
 			rotation.y, target_yaw, delta, rotation_speed
@@ -195,12 +208,17 @@ func _on_died() -> void:
 	get_tree().reload_current_scene()
 
 
-func _decay_hit_knockback(delta: float) -> void:
-	if _hit_knockback.length_squared() <= 0.0001:
+func _tick_knockback(delta: float) -> void:
+	if _knockback_time_left <= 0.0:
 		_hit_knockback = Vector3.ZERO
 		return
+	_knockback_time_left -= delta
 	var decay := hit_knockback_decay * delta
 	_hit_knockback = _hit_knockback.move_toward(Vector3.ZERO, decay)
+	if _knockback_time_left <= 0.0:
+		_hit_knockback = Vector3.ZERO
+		velocity.x = 0.0
+		velocity.z = 0.0
 
 
 func _duplicate_visual_materials() -> void:

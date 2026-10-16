@@ -9,7 +9,7 @@ extends CharacterBody3D
 @export_group("Combat")
 @export var detection_range: float = 14.0
 @export var attack_range: float = 2.2
-@export var knockback_strength: float = 6.5
+@export var knockback_strength: float = 5.0
 @export var telegraph_time: float = 0.4
 @export var lunge_time: float = 0.35
 
@@ -37,15 +37,14 @@ func _exit_tree() -> void:
 
 
 func _ready() -> void:
+	add_to_group("enemy_slime")
 	collision_layer = CombatLayers.ENEMY_BODY
 	collision_mask = CombatLayers.WORLD | CombatLayers.PLAYER_BODY
 	attack_hitbox.owner_root = self
-	if body_mesh != null:
-		var mat := body_mesh.get_surface_override_material(0) as StandardMaterial3D
-		if mat != null:
-			_base_body_color = mat.albedo_color
+	_duplicate_body_material()
 	health.damaged.connect(_on_damaged)
 	health.died.connect(_on_died)
+	hurtbox.hit_received.connect(_on_hit_received)
 	navigation_agent.path_desired_distance = 0.4
 	navigation_agent.target_desired_distance = 1.6
 	navigation_agent.avoidance_enabled = false
@@ -65,6 +64,7 @@ func _physics_process(delta: float) -> void:
 	if _hit_flash_time > 0.0:
 		_hit_flash_time -= delta
 		if _hit_flash_time <= 0.0:
+			_reset_body_material()
 			set_telegraph_visual(false)
 	state_machine.physics_update(delta)
 
@@ -123,7 +123,18 @@ func set_telegraph_visual(active: bool) -> void:
 	if active:
 		mat.albedo_color = Color(0.95, 0.35, 0.32)
 	elif _hit_flash_time <= 0.0:
-		mat.albedo_color = _base_body_color
+		_reset_body_material()
+
+
+func _reset_body_material() -> void:
+	if body_mesh == null:
+		return
+	var mat := body_mesh.get_surface_override_material(0) as StandardMaterial3D
+	if mat == null:
+		return
+	mat.albedo_color = _base_body_color
+	mat.emission_enabled = false
+	mat.emission = Color.BLACK
 
 
 func set_attack_hitbox_active(active: bool) -> void:
@@ -154,10 +165,36 @@ func _on_died() -> void:
 	state_machine.change_state(&"Dead")
 
 
+func get_burst_tint() -> Color:
+	return _base_body_color
+
+
+func _duplicate_body_material() -> void:
+	if body_mesh == null:
+		return
+	var shared := body_mesh.get_surface_override_material(0) as StandardMaterial3D
+	if shared == null:
+		return
+	var mat := shared.duplicate() as StandardMaterial3D
+	body_mesh.set_surface_override_material(0, mat)
+	_base_body_color = mat.albedo_color
+
+
+func _on_hit_received(_damage: int, source: Node) -> void:
+	if source is PlayerController:
+		var feedback := get_node_or_null("/root/CombatFeedback")
+		if feedback != null and feedback.has_method("trigger_melee_hit"):
+			feedback.trigger_melee_hit()
+
+
 func _flash_hit_color() -> void:
-	_hit_flash_time = 0.12
-	if body_mesh != null:
-		var mat := body_mesh.get_surface_override_material(0) as StandardMaterial3D
-		if mat != null:
-			mat.albedo_color = Color(1.0, 0.4, 0.4)
+	_hit_flash_time = 0.14
+	if body_mesh == null:
+		return
+	var mat := body_mesh.get_surface_override_material(0) as StandardMaterial3D
+	if mat == null:
+		return
+	mat.albedo_color = Color(1.15, 1.15, 1.15)
+	mat.emission_enabled = true
+	mat.emission = Color(1.0, 1.0, 1.0) * 1.8
 

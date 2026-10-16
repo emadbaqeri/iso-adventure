@@ -12,6 +12,10 @@ config/show_boot_splash=false
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
 
+[autoload]
+
+CombatFeedback="*res://scripts/combat/combat_feedback.gd"
+
 [display]
 
 window/size/viewport_width=1280

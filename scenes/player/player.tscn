@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3 uid="uid://cplayer_scene"]
+[gd_scene load_steps=16 format=3 uid="uid://cplayer_scene"]
 
 [ext_resource type="Script" path="res://scripts/player/player_controller.gd" id="1_controller"]
 [ext_resource type="Script" path="res://scripts/components/player_state_machine.gd" id="2_sm"]
@@ -10,6 +10,7 @@
 [ext_resource type="Script" path="res://scripts/components/health_component.gd" id="8_health"]
 [ext_resource type="Script" path="res://scripts/components/hurtbox_component.gd" id="9_hurt"]
 [ext_resource type="Script" path="res://scripts/components/hitbox_component.gd" id="10_hit"]
+[ext_resource type="Script" path="res://scripts/player/attack_swing_visual.gd" id="11_swing"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
 radius = 0.35
@@ -28,6 +29,9 @@ height = 1.15
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_attack"]
 size = Vector3(1.1, 0.9, 1.35)
+
+[sub_resource type="BoxMesh" id="BoxMesh_slash"]
+size = Vector3(1.15, 0.06, 0.95)
 
 [node name="Player" type="CharacterBody3D" groups=["player"]]
 collision_layer = 2
@@ -76,6 +80,11 @@ script = ExtResource("10_hit")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="AttackPivot/AttackHitbox"]
 shape = SubResource("BoxShape3D_attack")
+
+[node name="SlashVisual" type="MeshInstance3D" parent="AttackPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.72, -0.82)
+mesh = SubResource("BoxMesh_slash")
+script = ExtResource("11_swing")
 
 [node name="PlayerStateMachine" type="Node" parent="."]
 script = ExtResource("2_sm")

@@ -30,6 +30,7 @@ extends CharacterBody3D
 @onready var _attack_hitbox: HitboxComponent = $AttackPivot/AttackHitbox
 @onready var _visual: Node3D = $Visual
 @onready var _attack_pivot: Node3D = $AttackPivot
+@onready var _attack_swing: AttackSwingVisual = $AttackPivot/SlashVisual
 @onready var _body_mesh: MeshInstance3D = $Visual/Body
 @onready var _nose_mesh: MeshInstance3D = $Visual/Nose
 
@@ -135,7 +136,18 @@ func begin_attack_visual() -> void:
 
 func end_attack_visual() -> void:
 	_attack_pivot.scale = Vector3.ONE
+	set_attack_swing_active(false)
 	set_attack_hitbox_active(false)
+
+
+func set_attack_swing_active(active: bool) -> void:
+	if _attack_swing == null:
+		return
+	_attack_swing.set_active(active)
+	if active:
+		var forward := get_mesh_forward_flat()
+		_attack_pivot.rotation.y = PlayerFacingMath.direction_to_yaw(forward)
+		_attack_swing.position = Vector3(0.0, 0.72, -0.82)
 
 
 func apply_hit_knockback(from_world: Vector3) -> void:

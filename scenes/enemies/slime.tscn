@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3 uid="uid://cslime_enemy"]
+[gd_scene load_steps=18 format=3 uid="uid://cslime_enemy"]
 
 [ext_resource type="Script" path="res://scripts/enemies/slime/slime_enemy.gd" id="1_slime"]
 [ext_resource type="Script" path="res://scripts/enemies/slime/slime_state_machine.gd" id="2_sm"]
@@ -10,6 +10,7 @@
 [ext_resource type="Script" path="res://scripts/components/health_component.gd" id="8_health"]
 [ext_resource type="Script" path="res://scripts/components/hurtbox_component.gd" id="9_hurt"]
 [ext_resource type="Script" path="res://scripts/components/hitbox_component.gd" id="10_hit"]
+[ext_resource type="Script" path="res://scripts/ui/slime_health_billboard.gd" id="11_billboard"]
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_slime"]
 albedo_color = Color(0.35, 0.78, 0.42, 1)
 
@@ -69,6 +70,10 @@ damage = 1
 shape = SubResource("BoxShape3D_attack")
 
 [node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+
+[node name="HealthBillboard" type="Node3D" parent="."]
+script = ExtResource("11_billboard")
+health_path = NodePath("../HealthComponent")
 
 [node name="SlimeStateMachine" type="Node" parent="."]
 script = ExtResource("2_sm")

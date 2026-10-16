@@ -51,4 +51,5 @@ func _update_hitbox(controller: PlayerController) -> void:
 	if should_hit == _hitbox_enabled:
 		return
 	_hitbox_enabled = should_hit
+	controller.set_attack_swing_active(should_hit)
 	controller.set_attack_hitbox_active(should_hit)

@@ -1,0 +1,10 @@
+[gd_scene load_steps=3 format=3 uid="uid://bwardenvisual01"]
+
+[ext_resource type="PackedScene" uid="uid://ot8gqufpj0u8" path="res://assets/characters/warden/warden.glb" id="1_glb"]
+[ext_resource type="Script" path="res://scripts/player/warden_visual.gd" id="2_script"]
+
+[node name="WardenVisual" type="Node3D"]
+script = ExtResource("2_script")
+
+[node name="warden" parent="." instance=ExtResource("1_glb")]
+transform = Transform3D(1.237, 0, 0, 0, 1.237, 0, 0, 0, 1.237, 0, -0.259, 0)

@@ -34,6 +34,27 @@
 
 Texture reference: `assets/palette/starter_palette.png` (authoring guide; materials use flat colors).
 
+### Warden character palette (`tools/blender/palette.png`)
+
+Procedural **8×4** swatch grid (256×128 PNG). Each mesh face UV-snaps to the **center** of a swatch; Godot uses `materials/lowpoly_palette_warden.tres` with **nearest** filtering for crisp flat color.
+
+| Swatch (col, row) | Role |
+|-------------------|------|
+| (0,0) | Cloak blue-gray |
+| (1,0) | Cloak shadow |
+| (2,0) | Fur trim (hood/collar) |
+| (3,0) | Skin |
+| (4,0) | Hood |
+| (5,0) | Leather belt |
+| (6,0) | Metal buckle |
+| (7,0) | Boots |
+| (0,1) | Pants |
+| (1,1) | Gloves |
+| (2,1) | Trim accent |
+| (3,1) | Deep shadow |
+
+Shipped copy: `assets/characters/warden/palette.png` (regenerated with `blender -b -P tools/blender/build_warden.py`).
+
 ## Pipeline
 
 1. Model in Blender at **fixed world scale**, export **glTF**.

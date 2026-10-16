@@ -29,25 +29,19 @@ extends CharacterBody3D
 @onready var _hurtbox: HurtboxComponent = $Hurtbox
 @onready var _sword_rig: PlayerSwordRig = $SwordRig
 @onready var _attack_hitbox: HitboxComponent = _sword_rig.get_hitbox()
-@onready var _visual: Node3D = $Visual
-@onready var _body_mesh: MeshInstance3D = $Visual/Body
-@onready var _nose_mesh: MeshInstance3D = $Visual/Nose
+@onready var _warden_visual: WardenVisual = $Visual/WardenVisual
 
 var _cooldown_left: float = 0.0
 var _last_facing: Vector3 = Vector3.FORWARD
 var _hit_knockback: Vector3 = Vector3.ZERO
 var _knockback_time_left: float = 0.0
 var _damage_flash_time: float = 0.0
-var _body_base_color: Color = Color.WHITE
-var _nose_base_color: Color = Color.WHITE
 var _attack_input_buffered: bool = false
 
 
 func _ready() -> void:
 	add_to_group("player")
 	_attack_hitbox.owner_root = self
-	_duplicate_visual_materials()
-	_cache_visual_colors()
 	_hurtbox.hit_received.connect(_on_hurtbox_hit)
 	_health.damaged.connect(_on_damaged)
 	_health.died.connect(_on_died)
@@ -269,42 +263,18 @@ func _tick_knockback(delta: float) -> void:
 		velocity.z = 0.0
 
 
-func _duplicate_visual_materials() -> void:
-	for mesh: MeshInstance3D in [_body_mesh, _nose_mesh]:
-		var shared := mesh.get_surface_override_material(0) as StandardMaterial3D
-		if shared != null:
-			mesh.set_surface_override_material(0, shared.duplicate())
-
-
-func _cache_visual_colors() -> void:
-	var body_mat := _body_mesh.get_surface_override_material(0) as StandardMaterial3D
-	if body_mat != null:
-		_body_base_color = body_mat.albedo_color
-	var nose_mat := _nose_mesh.get_surface_override_material(0) as StandardMaterial3D
-	if nose_mat != null:
-		_nose_base_color = nose_mat.albedo_color
-
-
 func _flash_damage_material(
 	color: Color = Color(1.0, 0.35, 0.35),
 	duration: float = 0.12
 ) -> void:
 	_damage_flash_time = duration
-	_set_visual_colors(color, color)
+	if _warden_visual != null:
+		_warden_visual.apply_damage_tint(color)
 
 
 func _tick_damage_flash(delta: float) -> void:
 	if _damage_flash_time <= 0.0:
 		return
 	_damage_flash_time -= delta
-	if _damage_flash_time <= 0.0:
-		_set_visual_colors(_body_base_color, _nose_base_color)
-
-
-func _set_visual_colors(body_color: Color, nose_color: Color) -> void:
-	var body_mat := _body_mesh.get_surface_override_material(0) as StandardMaterial3D
-	if body_mat != null:
-		body_mat.albedo_color = body_color
-	var nose_mat := _nose_mesh.get_surface_override_material(0) as StandardMaterial3D
-	if nose_mat != null:
-		nose_mat.albedo_color = nose_color
+	if _damage_flash_time <= 0.0 and _warden_visual != null:
+		_warden_visual.reset_damage_tint()

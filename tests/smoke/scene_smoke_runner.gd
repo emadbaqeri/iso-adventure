@@ -40,7 +40,11 @@ func _run_smoke() -> PackedStringArray:
 		if instance == null:
 			failures.append("Failed to instantiate: %s" % scene_path)
 			continue
-		if scene_path.ends_with("render_test.tscn") or scene_path.ends_with("test_room.tscn"):
+		if (
+			scene_path.ends_with("render_test.tscn")
+			or scene_path.ends_with("test_room.tscn")
+			or scene_path.ends_with("puzzle_room.tscn")
+		):
 			get_root().add_child(instance)
 			for _i: int in range(8):
 				await process_frame

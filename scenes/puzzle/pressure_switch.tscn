@@ -1,0 +1,24 @@
+[gd_scene load_steps=5 format=3 uid="uid://cpressure_switch"]
+
+[ext_resource type="Script" path="res://scripts/puzzle/pressure_switch.gd" id="1_script"]
+[ext_resource type="Material" path="res://materials/lowpoly_accent.tres" id="2_mat"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_plate"]
+size = Vector3(1.6, 0.2, 1.6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_plate"]
+size = Vector3(1.5, 0.35, 1.5)
+
+[node name="PressureSwitch" type="Area3D"]
+collision_layer = 0
+collision_mask = 3
+script = ExtResource("1_script")
+
+[node name="PlateMesh" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.12, 0)
+mesh = SubResource("BoxMesh_plate")
+surface_material_override/0 = ExtResource("2_mat")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.18, 0)
+shape = SubResource("BoxShape3D_plate")

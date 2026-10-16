@@ -1,9 +1,15 @@
-[gd_scene load_steps=21 format=3 uid="uid://ctest_room_scene"]
+[gd_scene load_steps=28 format=3 uid="uid://ctest_room_scene"]
 
 [ext_resource type="PackedScene" uid="uid://cplayer_scene" path="res://scenes/player/player.tscn" id="1_player"]
 [ext_resource type="PackedScene" uid="uid://cslime_enemy" path="res://scenes/enemies/slime.tscn" id="2_slime"]
+[ext_resource type="PackedScene" uid="uid://cpuzzle_access_gate" path="res://scenes/levels/puzzle_access_gate.tscn" id="12_gate"]
+[ext_resource type="PackedScene" uid="uid://cpuzzle_room_scene" path="res://scenes/levels/puzzle_room.tscn" id="13_puzzle"]
 [ext_resource type="PackedScene" uid="uid://cplayer_health_hud" path="res://scenes/ui/player_health_hud.tscn" id="3_hud"]
 [ext_resource type="PackedScene" uid="uid://croom_progress_hud" path="res://scenes/ui/room_progress_hud.tscn" id="11_room_hud"]
+[ext_resource type="PackedScene" uid="uid://cscene_reset_hud" path="res://scenes/ui/scene_reset_hud.tscn" id="14_reset_hud"]
+[ext_resource type="Script" path="res://scripts/levels/level_spawn_marker.gd" id="15_spawn"]
+[ext_resource type="Script" path="res://scripts/levels/player_fall_safety.gd" id="16_fall"]
+[ext_resource type="Script" path="res://scripts/levels/level_perimeter_bounds.gd" id="17_perimeter"]
 [ext_resource type="Script" path="res://scripts/rendering/iso_camera_rig.gd" id="2_rig"]
 [ext_resource type="Material" path="res://materials/lowpoly_floor.tres" id="3_floor"]
 [ext_resource type="Material" path="res://materials/lowpoly_default.tres" id="4_default"]
@@ -41,10 +47,13 @@ fog_density = 0.008
 fog_aerial_perspective = 0.32
 
 [sub_resource type="BoxMesh" id="BoxMesh_floor"]
-size = Vector3(24, 0.4, 24)
+size = Vector3(34, 0.4, 26)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
-size = Vector3(24, 0.4, 24)
+size = Vector3(34, 0.4, 26)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_gate_floor"]
+size = Vector3(8, 0.4, 8)
 
 [sub_resource type="BoxMesh" id="BoxMesh_wall"]
 size = Vector3(4, 2.4, 1.2)
@@ -84,18 +93,29 @@ mood_presets = Array[ExtResource("8_warm")]([ExtResource("8_warm"), ExtResource(
 
 [node name="World" type="Node3D" parent="."]
 
-[node name="Floor" type="StaticBody3D" parent="World"]
+[node name="Floor" type="StaticBody3D" parent="World" groups=["level_floor"]]
 collision_layer = 1
 collision_mask = 0
 
 [node name="Mesh" type="MeshInstance3D" parent="World/Floor"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, -0.2, 0)
 mesh = SubResource("BoxMesh_floor")
 surface_material_override/0 = ExtResource("3_floor")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="World/Floor"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, -0.2, 0)
 shape = SubResource("BoxShape3D_floor")
+
+[node name="GateFloor" type="StaticBody3D" parent="World" groups=["level_floor"]]
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/GateFloor"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.5, -0.2, -1)
+shape = SubResource("BoxShape3D_gate_floor")
+
+[node name="LevelPerimeterBounds" type="Node3D" parent="World"]
+script = ExtResource("17_perimeter")
 
 [node name="WallNorth" type="StaticBody3D" parent="World"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, -8)
@@ -137,8 +157,21 @@ shape = SubResource("BoxShape3D_wall")
 navigation_mesh = SubResource("NavigationMesh_room")
 script = ExtResource("10_nav")
 
+[node name="PlayerSpawn" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+script = ExtResource("15_spawn")
+
+[node name="PuzzleEntrySpawn" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.5, 0, -1)
+script = ExtResource("15_spawn")
+marker_id = &"puzzle_entry"
+
 [node name="Player" parent="." instance=ExtResource("1_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="LevelSafety" type="Node" parent="."]
+script = ExtResource("16_fall")
+player_path = NodePath("../Player")
 
 [node name="SlimeA" parent="." instance=ExtResource("2_slime")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, -4)
@@ -153,6 +186,15 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 6)
 player_path = NodePath("../Player")
 
 [node name="RoomProgressHud" parent="." instance=ExtResource("11_room_hud")]
+
+[node name="SceneResetHud" parent="." instance=ExtResource("14_reset_hud")]
+
+[node name="PuzzleAccessGate" parent="." instance=ExtResource("12_gate")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, -1)
+room_progress_path = NodePath("../RoomProgressHud")
+
+[node name="PuzzleRoom" parent="." instance=ExtResource("13_puzzle")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, -2)
 
 [node name="IsoCameraRig" type="Node3D" parent="."]
 script = ExtResource("2_rig")

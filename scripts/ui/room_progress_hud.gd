@@ -1,12 +1,15 @@
 class_name RoomProgressHud
 extends CanvasLayer
 
+signal room_cleared
+
 @export var slime_group: StringName = &"enemy_slime"
 
 var _slimes: Array[SlimeEnemy] = []
 var _total: int = 0
 var _count_label: Label
 var _cleared_label: Label
+var _did_emit_cleared: bool = false
 
 
 func _ready() -> void:
@@ -42,10 +45,18 @@ func _alive_count() -> int:
 	return alive
 
 
+func is_room_cleared() -> bool:
+	return _total > 0 and _alive_count() <= 0
+
+
 func _refresh() -> void:
 	if _count_label == null:
 		return
 	var alive := _alive_count()
 	_count_label.text = "Slimes: %d/%d" % [alive, _total]
+	var cleared := is_room_cleared()
 	if _cleared_label != null:
-		_cleared_label.visible = _total > 0 and alive <= 0
+		_cleared_label.visible = cleared
+	if cleared and not _did_emit_cleared:
+		_did_emit_cleared = true
+		room_cleared.emit()

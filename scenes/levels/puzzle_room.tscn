@@ -1,0 +1,133 @@
+[gd_scene load_steps=12 format=3 uid="uid://cpuzzle_room_scene"]
+
+[ext_resource type="Script" path="res://scripts/puzzle/puzzle_controller.gd" id="1_controller"]
+[ext_resource type="PackedScene" uid="uid://cpushable_block" path="res://scenes/puzzle/pushable_block.tscn" id="2_block"]
+[ext_resource type="PackedScene" uid="uid://cpressure_switch" path="res://scenes/puzzle/pressure_switch.tscn" id="3_switch"]
+[ext_resource type="PackedScene" uid="uid://cpuzzle_door" path="res://scenes/puzzle/door.tscn" id="4_door"]
+[ext_resource type="PackedScene" uid="uid://cpuzzle_goal" path="res://scenes/puzzle/puzzle_goal.tscn" id="5_goal"]
+[ext_resource type="Material" path="res://materials/lowpoly_floor.tres" id="6_floor"]
+[ext_resource type="Material" path="res://materials/lowpoly_default.tres" id="7_wall"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+size = Vector3(18, 0.4, 14)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
+size = Vector3(18, 0.4, 14)
+
+[sub_resource type="BoxMesh" id="BoxMesh_wall"]
+size = Vector3(4, 2.4, 1.2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wall"]
+size = Vector3(4, 2.4, 1.2)
+
+[node name="PuzzleRoom" type="Node3D"]
+
+[node name="PuzzleController" type="Node3D" parent="."]
+script = ExtResource("1_controller")
+switch_paths = Array[NodePath]([NodePath("../Switches/SwitchA"), NodePath("../Switches/SwitchB")])
+door_path = NodePath("../Door")
+block_paths = Array[NodePath]([NodePath("../Blocks/BlockA"), NodePath("../Blocks/BlockB")])
+goal_path = NodePath("../Goal")
+solved_label_path = NodePath("../PuzzleHud/MarginContainer/VBox/SolvedLabel")
+blocked_cell_offsets = Array[Vector2i]([Vector2i(-2, -3), Vector2i(-1, -3), Vector2i(0, -3), Vector2i(1, -3), Vector2i(2, -3), Vector2i(-2, 1), Vector2i(-1, 1), Vector2i(1, 1), Vector2i(2, 1), Vector2i(-4, -2), Vector2i(-4, -1), Vector2i(-4, 0), Vector2i(4, -2), Vector2i(4, -1), Vector2i(4, 0), Vector2i(0, 2), Vector2i(1, 2), Vector2i(2, 2)])
+
+[node name="Floor" type="StaticBody3D" parent="." groups=["level_floor"]]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="Floor"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, 0)
+mesh = SubResource("BoxMesh_floor")
+surface_material_override/0 = ExtResource("6_floor")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, 0)
+shape = SubResource("BoxShape3D_floor")
+
+[node name="WallSouth" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, -5.4)
+collision_layer = 1
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="WallSouth"]
+mesh = SubResource("BoxMesh_wall")
+surface_material_override/0 = ExtResource("7_wall")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="WallSouth"]
+shape = SubResource("BoxShape3D_wall")
+
+[node name="WallNorth" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 1.2, 4.2)
+collision_layer = 1
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="WallNorth"]
+mesh = SubResource("BoxMesh_wall")
+surface_material_override/0 = ExtResource("7_wall")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="WallNorth"]
+shape = SubResource("BoxShape3D_wall")
+
+[node name="WallEast" type="StaticBody3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 7.4, 1.2, -1)
+collision_layer = 1
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="WallEast"]
+mesh = SubResource("BoxMesh_wall")
+surface_material_override/0 = ExtResource("7_wall")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="WallEast"]
+shape = SubResource("BoxShape3D_wall")
+
+[node name="Blocks" type="Node3D" parent="."]
+
+[node name="BlockA" parent="Blocks" instance=ExtResource("2_block")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0, -2)
+controller_path = NodePath("../../PuzzleController")
+
+[node name="BlockB" parent="Blocks" instance=ExtResource("2_block")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, -2)
+controller_path = NodePath("../../PuzzleController")
+
+[node name="Switches" type="Node3D" parent="."]
+
+[node name="SwitchA" parent="Switches" instance=ExtResource("3_switch")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0, -3)
+
+[node name="SwitchB" parent="Switches" instance=ExtResource("3_switch")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, -3)
+
+[node name="Door" parent="." instance=ExtResource("4_door")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="Goal" parent="." instance=ExtResource("5_goal")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4)
+
+[node name="PuzzleHud" type="CanvasLayer" parent="."]
+
+[node name="MarginContainer" type="MarginContainer" parent="PuzzleHud"]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -180.0
+offset_top = 72.0
+offset_right = 180.0
+offset_bottom = 120.0
+grow_horizontal = 2
+
+[node name="VBox" type="VBoxContainer" parent="PuzzleHud/MarginContainer"]
+layout_mode = 2
+
+[node name="HintLabel" type="Label" parent="PuzzleHud/MarginContainer/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Push blocks onto both plates. R resets blocks."
+horizontal_alignment = 1
+
+[node name="SolvedLabel" type="Label" parent="PuzzleHud/MarginContainer/VBox"]
+visible = false
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Puzzle solved!"
+horizontal_alignment = 1

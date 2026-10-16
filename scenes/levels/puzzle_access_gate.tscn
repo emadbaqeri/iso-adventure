@@ -1,0 +1,24 @@
+[gd_scene load_steps=5 format=3 uid="uid://cpuzzle_access_gate"]
+
+[ext_resource type="Script" path="res://scripts/puzzle/puzzle_room_access.gd" id="1_script"]
+[ext_resource type="Material" path="res://materials/lowpoly_accent.tres" id="2_mat"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_gate"]
+size = Vector3(1.2, 2.4, 3.6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_gate"]
+size = Vector3(1.2, 2.4, 3.6)
+
+[node name="PuzzleAccessGate" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+script = ExtResource("1_script")
+
+[node name="Mesh" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+mesh = SubResource("BoxMesh_gate")
+surface_material_override/0 = ExtResource("2_mat")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+shape = SubResource("BoxShape3D_gate")

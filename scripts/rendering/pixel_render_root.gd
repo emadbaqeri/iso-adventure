@@ -7,6 +7,7 @@ extends Control
 @export var sub_viewport_container_path: NodePath = ^"SubViewportContainer"
 @export var sub_viewport_path: NodePath = ^"SubViewportContainer/SubViewport"
 @export var camera_rig_path: NodePath = ^"SubViewportContainer/SubViewport/PixelCameraRig"
+@export var camera_path: NodePath = ^"SubViewportContainer/SubViewport/PixelCameraRig/Camera3D"
 
 @export var quantize_palette: bool = false:
 	set(value):
@@ -20,9 +21,11 @@ extends Control
 var _quantize_palette: bool = false
 
 @export var palette_texture: Texture2D
+@export var mood_controller_path: NodePath
 
 var _container: SubViewportContainer
 var _post_material: ShaderMaterial
+var _camera: Camera3D
 
 
 func _ready() -> void:
@@ -32,6 +35,7 @@ func _ready() -> void:
 
 	var sub_vp := get_node(sub_viewport_path) as SubViewport
 	sub_vp.size = render_size
+	_camera = get_node_or_null(camera_path) as Camera3D
 
 	_cache_post_material()
 	_apply_post_uniforms()
@@ -41,6 +45,14 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	_apply_sub_pixel_offset()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not event.is_action_pressed(&"cycle_mood"):
+		return
+	var mood := get_node_or_null(mood_controller_path) as RenderMoodController
+	if mood != null:
+		mood.cycle_mood()
 
 
 func _cache_post_material() -> void:
@@ -66,11 +78,15 @@ func _apply_sub_pixel_offset() -> void:
 	if _container == null:
 		return
 	var rig := get_node_or_null(camera_rig_path) as PixelCameraRig
-	if rig == null:
+	if rig == null or _camera == null:
 		return
 	var scale := integer_scale()
-	var offset := rig.sub_pixel_offset * float(scale)
-	_container.position = _container_base_position - offset
+	var vp_offset := PixelCameraMath.remainder_to_viewport_offset_unproject(
+		_camera,
+		rig.sub_pixel_offset,
+		rig.pixel_world_size,
+	)
+	_container.position = _container_base_position - vp_offset * float(scale)
 
 
 func integer_scale() -> int:

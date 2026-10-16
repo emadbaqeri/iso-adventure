@@ -2,26 +2,44 @@
 
 ## Look
 
-Low-res 3D rendered into a **SubViewport** at **640×360**, displayed through `PixelRenderRoot` with **nearest-neighbor** filtering and **integer** upscale (floor of window size ÷ render size). Orthographic camera at **~35°** isometric (`PixelCameraRig`); camera origin snaps to the texel grid each frame with **sub-pixel offset** applied to the `SubViewportContainer` position.
+Low-res 3D rendered into a **SubViewport** at **640×360**, displayed through `PixelRenderRoot` with **nearest-neighbor** filtering and **integer** upscale (floor of window size ÷ render size). Orthographic camera at **~35°** isometric (`PixelCameraRig`).
 
-## Render pipeline (implemented)
+**Pixel stability:** each physics frame the camera origin is projected onto the camera **right/up** axes and snapped in steps of `units_per_pixel` (world units per texel). The fractional remainder drives a **sub-pixel offset** on the upscaled `SubViewportContainer`, computed via `Camera3D.unproject_position` so iso views compensate in real screen space. Follow targets move on the camera **right** axis in world space for even screen motion during tests.
+
+## Render pipeline
 
 | Stage | Resource |
 |-------|----------|
-| Cel surface | `shaders/cel_spatial.gdshader` — three hard light bands via `light()` |
+| Cel surface | `shaders/cel_spatial.gdshader` — hue-shifted hard bands, optional rim |
+| Mood | `RenderMoodResource` + `RenderMoodController` (`resources/moods/`) |
 | Low-res 3D | `SubViewport` 640×360 inside `scenes/render_test.tscn` |
-| Outline + palette | `shaders/pixel_post.gdshader` on camera-mounted fullscreen quad (depth + normal edges) |
-| Palette quantize | Optional; `quantize_palette` on `PixelRenderRoot`, `assets/palette/starter_palette.png` |
+| Outline + palette | `shaders/pixel_post.gdshader` — depth + normal edges (top-face boost), dual-tone outline |
+| Palette quantize | Optional; `quantize_palette` on `PixelRenderRoot` |
 
-**Lighting:** `DirectionalLight3D` sun + `WorldEnvironment` ambient (color ambient, ~0.55 energy) so blockout meshes read clearly.
+**Lighting & depth:** warm **key** (`DirectionalLight3D` sun) + cool **ambient**, cool **rim** fill, **SSAO** for contact read, **distance fog** tinted per mood, **hard** sun shadows (`shadow_filter = none`). Cel bands use separate shadow/mid/highlight tints (not only darker albedo).
 
-**Test scene:** `scenes/render_test.tscn` (main scene for now) — floor, cubes, pillars, and a moving cube the camera follows.
+**Test scene:** `scenes/render_test.tscn` (main scene). Press **M** to cycle moods (`warm_day` → `cool_dungeon`).
 
 ## Shaders
 
-- Toon/cel: hard color bands (`band_shadow` / `band_mid` / `band_highlight`)
-- Outline pass: depth + normal discontinuities, pixel-aligned (1-texel neighbors)
+- Toon/cel: `band_count` (2–4), hue-shifted `band_shadow` / `band_mid` / `band_highlight`, `rim_tint` + `rim_strength`
+- Outline: 1-texel depth + normal neighbors; boosted on upward-facing normals; `outline_dark` / `outline_light` chosen per face luminance
 - Palette: nearest-color match across palette texels (toggle on root)
+
+## Mood resource (`RenderMoodResource`)
+
+| Field | Role |
+|-------|------|
+| `key_light_color`, `key_light_energy` | Sun warmth / strength |
+| `ambient_color`, `ambient_energy` | Cool/warm fill |
+| `shadow_tint`, `mid_tint`, `highlight_tint` | Cel band hues |
+| `rim_tint`, `rim_strength` | Edge separation |
+| `fog_color`, `fog_density`, `fog_aerial_perspective` | Depth / mood |
+| `ssao_intensity` | Contact shadow feel |
+| `band_count` | 2–4 cel steps |
+| `outline_dark`, `outline_light` | Post outline contrast |
+
+Presets: `resources/moods/warm_day.tres`, `resources/moods/cool_dungeon.tres`.
 
 ## Assets
 

@@ -57,13 +57,13 @@ jobs:
         run: mkdir -p build/linux build/windows build/macos
 
       - name: Export Linux
-        run: .ci/godot/Godot --headless --path . --export-release "Linux" build/linux/iso-adventure.x86_64
+        run: .ci/godot/Godot --headless --display-driver headless --audio-driver Dummy --path . --export-release "Linux" build/linux/iso-adventure.x86_64
 
       - name: Export Windows
-        run: .ci/godot/Godot --headless --path . --export-release "Windows Desktop" build/windows/iso-adventure.exe
+        run: .ci/godot/Godot --headless --display-driver headless --audio-driver Dummy --path . --export-release "Windows Desktop" build/windows/iso-adventure.exe
 
       - name: Export macOS (unsigned)
-        run: .ci/godot/Godot --headless --path . --export-release "macOS" build/macos/iso-adventure.zip
+        run: .ci/godot/Godot --headless --display-driver headless --audio-driver Dummy --path . --export-release "macOS" build/macos/iso-adventure.zip
 
       - name: Upload Linux build
         uses: actions/upload-artifact@v4

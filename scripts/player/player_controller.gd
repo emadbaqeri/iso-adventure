@@ -27,10 +27,10 @@ extends CharacterBody3D
 @onready var _state_machine: PlayerStateMachine = $PlayerStateMachine
 @onready var _health: HealthComponent = $HealthComponent
 @onready var _hurtbox: HurtboxComponent = $Hurtbox
-@onready var _attack_hitbox: HitboxComponent = $AttackPivot/AttackHitbox
+@onready var _sword_rig: PlayerSwordRig = $AttackPivot/SwordRig
+@onready var _attack_hitbox: HitboxComponent = _sword_rig.get_hitbox()
 @onready var _visual: Node3D = $Visual
 @onready var _attack_pivot: Node3D = $AttackPivot
-@onready var _attack_swing: AttackSwingVisual = $AttackPivot/SlashVisual
 @onready var _body_mesh: MeshInstance3D = $Visual/Body
 @onready var _nose_mesh: MeshInstance3D = $Visual/Nose
 
@@ -115,14 +115,13 @@ func start_attack_cooldown() -> void:
 	_cooldown_left = attack_cooldown
 
 
-func align_attack_hitbox() -> void:
+func align_attack_pivot_facing() -> void:
 	var forward := get_mesh_forward_flat()
-	var center := global_position + Vector3(0.0, 0.75, 0.0)
-	_attack_hitbox.global_position = center + forward * 0.95
+	_attack_pivot.rotation.y = PlayerFacingMath.direction_to_yaw(forward)
 
 
 func set_attack_hitbox_active(active: bool) -> void:
-	align_attack_hitbox()
+	align_attack_pivot_facing()
 	if active:
 		_attack_hitbox.activate()
 		_attack_hitbox.call_deferred("_apply_overlaps")
@@ -131,23 +130,26 @@ func set_attack_hitbox_active(active: bool) -> void:
 
 
 func begin_attack_visual() -> void:
-	_attack_pivot.scale = Vector3(1.0, 1.0, 1.35)
+	align_attack_pivot_facing()
 
 
 func end_attack_visual() -> void:
-	_attack_pivot.scale = Vector3.ONE
-	set_attack_swing_active(false)
+	_sword_rig.return_to_rest()
 	set_attack_hitbox_active(false)
 
 
-func set_attack_swing_active(active: bool) -> void:
-	if _attack_swing == null:
-		return
-	_attack_swing.set_active(active)
-	if active:
-		var forward := get_mesh_forward_flat()
-		_attack_pivot.rotation.y = PlayerFacingMath.direction_to_yaw(forward)
-		_attack_swing.position = Vector3(0.0, 0.72, -0.82)
+func begin_melee_swing() -> void:
+	align_attack_pivot_facing()
+	_sword_rig.begin_swing()
+
+
+func set_melee_swing_progress(progress: float) -> void:
+	align_attack_pivot_facing()
+	_sword_rig.set_swing_progress(progress)
+
+
+func end_melee_swing() -> void:
+	_sword_rig.return_to_rest()
 
 
 func apply_hit_knockback(from_world: Vector3) -> void:

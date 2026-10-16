@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://cplayer_scene"]
+[gd_scene load_steps=15 format=3 uid="uid://cplayer_scene"]
 
 [ext_resource type="Script" path="res://scripts/player/player_controller.gd" id="1_controller"]
 [ext_resource type="Script" path="res://scripts/components/player_state_machine.gd" id="2_sm"]
@@ -7,10 +7,11 @@
 [ext_resource type="Script" path="res://scripts/components/player_attack_state.gd" id="5_attack"]
 [ext_resource type="Material" path="res://materials/lowpoly_default.tres" id="6_mat"]
 [ext_resource type="Material" path="res://materials/lowpoly_accent.tres" id="7_nose"]
-[ext_resource type="Script" path="res://scripts/components/health_component.gd" id="8_health"]
-[ext_resource type="Script" path="res://scripts/components/hurtbox_component.gd" id="9_hurt"]
-[ext_resource type="Script" path="res://scripts/components/hitbox_component.gd" id="10_hit"]
-[ext_resource type="Script" path="res://scripts/player/attack_swing_visual.gd" id="11_swing"]
+[ext_resource type="Material" path="res://materials/lowpoly_warm.tres" id="8_warm"]
+[ext_resource type="Script" path="res://scripts/components/health_component.gd" id="9_health"]
+[ext_resource type="Script" path="res://scripts/components/hurtbox_component.gd" id="10_hurt"]
+[ext_resource type="Script" path="res://scripts/components/hitbox_component.gd" id="11_hit"]
+[ext_resource type="Script" path="res://scripts/player/player_sword_rig.gd" id="12_sword"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
 radius = 0.35
@@ -28,10 +29,16 @@ radius = 0.42
 height = 1.15
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_attack"]
-size = Vector3(1.1, 0.9, 1.35)
+size = Vector3(0.95, 0.55, 1.15)
 
-[sub_resource type="BoxMesh" id="BoxMesh_slash"]
-size = Vector3(1.15, 0.06, 0.95)
+[sub_resource type="BoxMesh" id="BoxMesh_blade"]
+size = Vector3(0.1, 0.06, 0.78)
+
+[sub_resource type="BoxMesh" id="BoxMesh_guard"]
+size = Vector3(0.28, 0.08, 0.1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_hilt"]
+size = Vector3(0.1, 0.1, 0.22)
 
 [node name="Player" type="CharacterBody3D" groups=["player"]]
 collision_layer = 2
@@ -56,14 +63,14 @@ mesh = SubResource("BoxMesh_nose")
 surface_material_override/0 = ExtResource("7_nose")
 
 [node name="HealthComponent" type="Node" parent="."]
-script = ExtResource("8_health")
+script = ExtResource("9_health")
 max_health = 5
 
 [node name="Hurtbox" type="Area3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.65, 0)
 collision_layer = 8
 collision_mask = 0
-script = ExtResource("9_hurt")
+script = ExtResource("10_hurt")
 health_path = NodePath("../HealthComponent")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Hurtbox"]
@@ -71,20 +78,40 @@ shape = SubResource("CapsuleShape3D_hurt")
 
 [node name="AttackPivot" type="Node3D" parent="."]
 
-[node name="AttackHitbox" type="Area3D" parent="AttackPivot"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, -0.85)
+[node name="SwordRig" type="Node3D" parent="AttackPivot"]
+script = ExtResource("12_sword")
+blade_material = ExtResource("6_mat")
+guard_material = ExtResource("7_nose")
+hilt_material = ExtResource("8_warm")
+
+[node name="SwingPivot" type="Node3D" parent="AttackPivot/SwordRig"]
+
+[node name="Sword" type="Node3D" parent="AttackPivot/SwordRig/SwingPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.18)
+
+[node name="Hilt" type="MeshInstance3D" parent="AttackPivot/SwordRig/SwingPivot/Sword"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.08)
+mesh = SubResource("BoxMesh_hilt")
+
+[node name="Guard" type="MeshInstance3D" parent="AttackPivot/SwordRig/SwingPivot/Sword"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.02)
+mesh = SubResource("BoxMesh_guard")
+
+[node name="Blade" type="MeshInstance3D" parent="AttackPivot/SwordRig/SwingPivot/Sword"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.48)
+mesh = SubResource("BoxMesh_blade")
+
+[node name="Trail" type="MeshInstance3D" parent="AttackPivot/SwordRig/SwingPivot"]
+
+[node name="AttackHitbox" type="Area3D" parent="AttackPivot/SwordRig/SwingPivot"]
 collision_layer = 4
 collision_mask = 8
 monitoring = false
-script = ExtResource("10_hit")
+script = ExtResource("11_hit")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="AttackPivot/AttackHitbox"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="AttackPivot/SwordRig/SwingPivot/AttackHitbox"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.5)
 shape = SubResource("BoxShape3D_attack")
-
-[node name="SlashVisual" type="MeshInstance3D" parent="AttackPivot"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.72, -0.82)
-mesh = SubResource("BoxMesh_slash")
-script = ExtResource("11_swing")
 
 [node name="PlayerStateMachine" type="Node" parent="."]
 script = ExtResource("2_sm")

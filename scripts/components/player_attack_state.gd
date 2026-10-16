@@ -47,9 +47,14 @@ func physics_update(delta: float) -> void:
 func _update_hitbox(controller: PlayerController) -> void:
 	var should_hit := _elapsed >= HITBOX_ON and _elapsed < HITBOX_OFF
 	if should_hit:
-		controller.align_attack_hitbox()
+		var window := HITBOX_OFF - HITBOX_ON
+		var progress := (_elapsed - HITBOX_ON) / window
+		if not _hitbox_enabled:
+			controller.begin_melee_swing()
+		controller.set_melee_swing_progress(progress)
+	elif _hitbox_enabled:
+		controller.end_melee_swing()
 	if should_hit == _hitbox_enabled:
 		return
 	_hitbox_enabled = should_hit
-	controller.set_attack_swing_active(should_hit)
 	controller.set_attack_hitbox_active(should_hit)
